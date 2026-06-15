@@ -22,7 +22,7 @@
   }
   .dino {
     width: min(78vmin, 560px);
-    filter: hue-rotate(var(--hue, 0deg)) drop-shadow(0 14px 0 rgba(17,17,17,.12));
+    filter: hue-rotate(var(--hue, 0deg)) saturate(var(--sat, 1)) brightness(var(--bri, 1)) drop-shadow(0 14px 0 rgba(17,17,17,.12));
     transition: filter .25s ease;
     transform-origin: 50% 60%;
   }
@@ -61,6 +61,16 @@
   }
   .hint.hide { opacity: 0; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  .bottom { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .buy {
+    pointer-events: auto;
+    font-size: clamp(15px, 3.4vmin, 20px); font-weight: 800;
+    letter-spacing: .08em; color: #fff; text-decoration: none;
+    background: #111; border: 3px solid #111; border-radius: 999px;
+    padding: 14px 30px; box-shadow: 5px 5px 0 rgba(17,17,17,.25);
+    transition: transform .15s ease;
+  }
+  .buy:active { transform: scale(.96); }
   @media (prefers-reduced-motion: reduce) {
     .hint { animation: none; }
     .dino.pop { animation: none; }
@@ -87,32 +97,55 @@
 
 <div class="ui">
   <div class="name" id="name"></div>
-  <div class="hint" id="hint">タップで色がかわるよ!</div>
+  <div class="bottom">
+    <div class="hint" id="hint">タップで色がかわるよ!</div>
+    <a class="buy" id="buy" href="#" target="_blank" rel="noopener">🛒 LAVA RED のアクキーを購入</a>
+  </div>
 </div>
 
 <script>
   const palettes = [
-    { hue: 0,   name: "BLAZE RED" },
-    { hue: 55,  name: "SUNNY YELLOW" },
-    { hue: 120, name: "SLIME GREEN" },
-    { hue: 180, name: "ICE CYAN" },
-    { hue: 240, name: "GALAXY BLUE" },
-    { hue: 300, name: "NEON PINK" },
+    { hue: 0,   sat: 2.0, bri: 1.1,  name: "LAVA RED" },
+    { hue: 55,  sat: 2.2, bri: 1.1,  name: "ACID YELLOW" },
+    { hue: 120, sat: 2.5, bri: 1.0,  name: "TOXIC GREEN" },
+    { hue: 200, sat: 2.5, bri: 1.1,  name: "ELECTRIC BLUE" },
+    { hue: 280, sat: 2.5, bri: 1.0,  name: "NEON VIOLET" },
+    { hue: 320, sat: 2.5, bri: 1.05, name: "HOT MAGENTA" },
   ];
+  // ===== SHOP設定:Shopifyで商品を作成後、ここを書き換える =====
+  const SHOP = {
+    productUrl: "https://thedinorenny.online/products/sue-acrylic-keychain", // 商品ページURL
+    variants: {           // 各色のvariant ID(Shopify管理画面で確認して記入)
+      "LAVA RED": "",
+      "ACID YELLOW": "",
+      "TOXIC GREEN": "",
+      "ELECTRIC BLUE": "",
+      "NEON VIOLET": "",
+      "HOT MAGENTA": "",
+    }
+  };
+  // ============================================================
   let idx = 0, tapped = false;
   const stage = document.getElementById("stage");
   const dino  = document.getElementById("dino");
   const nameEl = document.getElementById("name");
   const hint  = document.getElementById("hint");
+  const buyEl = document.getElementById("buy");
+  buyEl.href = SHOP.variants["LAVA RED"] ? SHOP.productUrl + "?variant=" + SHOP.variants["LAVA RED"] : SHOP.productUrl;
 
   stage.addEventListener("pointerdown", () => {
     if (!tapped) { tapped = true; hint.classList.add("hide"); }
     idx = (idx + 1) % palettes.length;
     const p = palettes[idx];
     stage.style.setProperty("--hue", p.hue + "deg");
+    stage.style.setProperty("--sat", p.sat);
+    stage.style.setProperty("--bri", p.bri);
     nameEl.textContent = p.name;
     nameEl.classList.remove("show"); void nameEl.offsetWidth; nameEl.classList.add("show");
     dino.classList.remove("pop"); void dino.offsetWidth; dino.classList.add("pop");
+    const vid = SHOP.variants[p.name];
+    buyEl.href = vid ? SHOP.productUrl + "?variant=" + vid : SHOP.productUrl;
+    buyEl.textContent = "🛒 " + p.name + " のアクキーを購入";
     if (navigator.vibrate) navigator.vibrate(20);
   });
 </script>
