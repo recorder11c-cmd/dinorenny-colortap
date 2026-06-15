@@ -105,23 +105,23 @@
 
 <script>
   const palettes = [
-    { hue: 0,   sat: 2.0, bri: 1.1,  name: "LAVA RED" },
-    { hue: 55,  sat: 2.2, bri: 1.1,  name: "ACID YELLOW" },
-    { hue: 120, sat: 2.5, bri: 1.0,  name: "TOXIC GREEN" },
-    { hue: 200, sat: 2.5, bri: 1.1,  name: "ELECTRIC BLUE" },
-    { hue: 280, sat: 2.5, bri: 1.0,  name: "NEON VIOLET" },
-    { hue: 320, sat: 2.5, bri: 1.05, name: "HOT MAGENTA" },
+    { hue: 0,   sat: 2.0, bri: 1.1,  name: "BLAZE RED" },
+    { hue: 50,  sat: 2.2, bri: 1.1,  name: "SUNNY YELLOW" },
+    { hue: 120, sat: 2.5, bri: 1.05, name: "SLIME GREEN" },
+    { hue: 175, sat: 2.5, bri: 1.05, name: "ICE CYAN" },
+    { hue: 230, sat: 2.5, bri: 1.05, name: "GALAXY BLUE" },
+    { hue: 300, sat: 2.5, bri: 1.0,  name: "NEON PINK" },
   ];
   // ===== SHOP設定:Shopifyで商品を作成後、ここを書き換える =====
   const SHOP = {
     productUrl: "https://thedinorenny.online/products/sue-acrylic-keychain", // 商品ページURL
     variants: {           // 各色のvariant ID(Shopify管理画面で確認して記入)
-      "LAVA RED": "",
-      "ACID YELLOW": "",
-      "TOXIC GREEN": "",
-      "ELECTRIC BLUE": "",
-      "NEON VIOLET": "",
-      "HOT MAGENTA": "",
+      "BLAZE RED": "",
+      "SUNNY YELLOW": "",
+      "SLIME GREEN": "",
+      "ICE CYAN": "",
+      "GALAXY BLUE": "",
+      "NEON PINK": "",
     }
   };
   // ============================================================
@@ -131,7 +131,7 @@
   const nameEl = document.getElementById("name");
   const hint  = document.getElementById("hint");
   const buyEl = document.getElementById("buy");
-  buyEl.href = SHOP.variants["LAVA RED"] ? SHOP.productUrl + "?variant=" + SHOP.variants["LAVA RED"] : SHOP.productUrl;
+  buyEl.href = SHOP.variants["BLAZE RED"] ? SHOP.productUrl + "?variant=" + SHOP.variants["BLAZE RED"] : SHOP.productUrl;
 
   stage.addEventListener("pointerdown", () => {
     if (!tapped) { tapped = true; hint.classList.add("hide"); }
