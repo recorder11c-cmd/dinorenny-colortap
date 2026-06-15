@@ -61,6 +61,33 @@
   }
   .hint.hide { opacity: 0; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  .tap-here {
+    position: fixed;
+    top: 18%; right: 6%;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+    font-size: clamp(22px, 5.5vmin, 36px); font-weight: 900;
+    color: #111; line-height: 1.1; text-align: center;
+    transform-origin: center center;
+    animation: tapwiggle 1.6s ease-in-out infinite;
+    transition: opacity .4s;
+    pointer-events: none;
+    filter: drop-shadow(2px 2px 0 rgba(255,233,74,.95));
+  }
+  .tap-here::before {
+    content: '';
+    position: absolute; inset: -10px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Cline x1='0' y1='40' x2='18' y2='40' stroke='%23111' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='102' y1='40' x2='120' y2='40' stroke='%23111' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='60' y1='0' x2='60' y2='18' stroke='%23111' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='17' y1='12' x2='28' y2='23' stroke='%23111' stroke-width='3' stroke-linecap='round'/%3E%3Cline x1='103' y1='12' x2='92' y2='23' stroke='%23111' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+    pointer-events: none;
+  }
+  .tap-here.hide { opacity: 0; pointer-events: none; }
+  @keyframes tapwiggle {
+    0%   { transform: rotate(-6deg) scale(1);    }
+    25%  { transform: rotate(4deg)  scale(1.08); }
+    50%  { transform: rotate(-4deg) scale(1.04); }
+    75%  { transform: rotate(5deg)  scale(1.1);  }
+    100% { transform: rotate(-6deg) scale(1);    }
+  }
+  @media (prefers-reduced-motion: reduce) { .tap-here { animation: none; } }
   .bottom { display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .buy {
     pointer-events: auto;
@@ -99,6 +126,7 @@
   <div class="name" id="name"></div>
   <div class="bottom">
     <div class="hint" id="hint">タップで色がかわるよ!</div>
+  <div class="tap-here" id="tapHere">TAP<br>HERE</div>
     <a class="buy" id="buy" href="#" target="_blank" rel="noopener">🛒 LAVA RED のアクキーを購入</a>
   </div>
 </div>
@@ -134,7 +162,7 @@
   buyEl.href = SHOP.variants["BLAZE RED"] ? SHOP.productUrl + "?variant=" + SHOP.variants["BLAZE RED"] : SHOP.productUrl;
 
   stage.addEventListener("pointerdown", () => {
-    if (!tapped) { tapped = true; hint.classList.add("hide"); }
+    if (!tapped) { tapped = true; hint.classList.add("hide"); document.getElementById("tapHere").classList.add("hide"); }
     idx = (idx + 1) % palettes.length;
     const p = palettes[idx];
     stage.style.setProperty("--hue", p.hue + "deg");
