@@ -87,15 +87,15 @@
    COLOR TAP 統一フォーマット — ここだけ書き換えれば新キャラ完成
    ========================================================= */
 const CONFIG = {
-  character: "SUE",                         // 表示名
-  baseImage: "art/sue.png",                 // 透過キーアートPNG（正方形・1080px推奨）
+  character: "MOSSUN",
+  baseImage: "art/colors/mossun_red.png",
   bg: "#4466ff",                            // 初期背景色
-  mode: "char",                             // "char"=キャラの色が変わる / "bg"=背景の色が変わる（黒系キャラ向け）
+  mode: "image",
   baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
 
   // mode:"image" のとき使う。事前生成PNG = `${imageDir}/${imageKey}_${key}.png`
   imageDir: "art/colors",
-  imageKey: "sue",
+  imageKey: "mossun",
 
   // 6色パレット（key=画像/色名キー。hue/sat/bri は char モード用）
   palettes: [
