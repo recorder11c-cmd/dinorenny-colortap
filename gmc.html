@@ -87,11 +87,11 @@
    COLOR TAP 統一フォーマット — ここだけ書き換えれば新キャラ完成
    ========================================================= */
 const CONFIG = {
-  character: "SUE",                         // 表示名
-  baseImage: "art/sue.png",                 // 透過キーアートPNG（正方形・1080px推奨）
+  character: "GMC",                         // 表示名
+  baseImage: "art/gmc.png",                 // 透過キーアートPNG
   bg: "#4466ff",                            // 初期背景色
-  mode: "char",                             // "char"=キャラの色が変わる / "bg"=背景の色が変わる（黒系キャラ向け）
-  baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
+  mode: "char",                             // 帽子・靴などアクセントの色が変わる
+  baseHueOffset: 0,                         // 帽子=オレンジ/靴=赤（赤ベース）なので補正0
 
   // 6色パレット（hue/sat/bri は赤ベース基準。baseHueOffset で全体を補正）
   palettes: [
@@ -114,9 +114,11 @@ const CONFIG = {
 };
 /* ========================================================= */
 
-document.title = "DinoRenny " + CONFIG.character + " COLOR TAP";
+document.title = CONFIG.character + " COLOR TAP | CHARAMARL";
 document.body.style.setProperty("--bg", CONFIG.bg);
 document.getElementById("char").src = CONFIG.baseImage;
+// 商品未設定なら購入ボタンを隠す
+const shopReady = CONFIG.shop.productUrl && !CONFIG.shop.productUrl.includes("...");
 
 const stage = document.getElementById("stage");
 const img   = document.getElementById("char");
@@ -138,9 +140,13 @@ function apply(p){
     img.style.setProperty("--bri", p.bri);
   }
   nameEl.textContent = p.name;
-  const vid = CONFIG.shop.variants[p.name];
-  buyEl.href = vid ? CONFIG.shop.productUrl + "?variant=" + vid : CONFIG.shop.productUrl;
-  buyEl.textContent = "🛒 " + p.name + " を購入";
+  if(shopReady){
+    const vid = CONFIG.shop.variants[p.name];
+    buyEl.href = vid ? CONFIG.shop.productUrl + "?variant=" + vid : CONFIG.shop.productUrl;
+    buyEl.textContent = "🛒 " + p.name + " を購入";
+  } else {
+    buyEl.style.display = "none";
+  }
 }
 apply(CONFIG.palettes[0]);
 
