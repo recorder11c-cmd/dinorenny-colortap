@@ -120,14 +120,14 @@
    ========================================================= */
 const CONFIG = {
   character: "GMC",                         // 表示名
-  baseImage: "art/gmc.png",                 // 透過キーアートPNG（正方形・1080px推奨）
+  baseImage: "art/colors/gmc_red.png",                 // 透過キーアートPNG（正方形・1080px推奨）
   bg: "#F2EDE2",                            // 初期背景色
-  mode: "char",                             // "char"=キャラの色が変わる / "bg"=背景の色が変わる（黒系キャラ向け）
+  mode: "image",                             // "char"=キャラの色が変わる / "bg"=背景の色が変わる（黒系キャラ向け）
   baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
 
   // mode:"image" のとき使う。事前生成PNG = `${imageDir}/${imageKey}_${key}.png`
   imageDir: "art/colors",
-  imageKey: "sue",
+  imageKey: "gmc",
 
   // 6色パレット（key=画像/色名キー。hue/sat/bri は char モード用）
   palettes: [
