@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COLOR TAP — CHARAMARL</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    background: var(--bg, #4466ff);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; font-family:'Comic Sans MS','Chalkboard SE',cursive;
+    transition: background .35s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stage {
+    position:relative; width:min(86vmin,560px); aspect-ratio:1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; user-select:none;
+  }
+  .stage img {
+    width:100%; height:100%; object-fit:contain;
+    filter: hue-rotate(var(--hue,0deg)) saturate(var(--sat,1)) brightness(var(--bri,1));
+    transition: filter .3s ease;
+  }
+  .stage.pop img { animation: pop .35s ease; }
+  @keyframes pop { 0%{transform:scale(1);} 40%{transform:scale(1.08);} 100%{transform:scale(1);} }
+
+  .ui { position:fixed; inset:0; pointer-events:none; }
+  .name {
+    position:fixed; top:6%; left:0; right:0; text-align:center;
+    font-weight:900; font-size:clamp(20px,5vmin,34px); color:#111;
+    letter-spacing:.04em; text-shadow:2px 2px 0 rgba(255,255,255,.6);
+  }
+  .bottom { position:fixed; left:0; right:0; bottom:6%; text-align:center; }
+  .hint {
+    display:inline-block; background:#fff; color:#111; font-weight:900;
+    padding:12px 24px; border-radius:30px; font-size:clamp(14px,3.5vmin,18px);
+    box-shadow:0 6px 0 rgba(0,0,0,.12); animation:bob 1.4s ease-in-out infinite;
+    transition:opacity .4s;
+  }
+  .hint.hide { opacity:0; }
+  @keyframes bob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-7px);} }
+
+  .tap-here {
+    position:fixed; top:16%; right:8%;
+    font-weight:900; font-size:clamp(22px,5.5vmin,36px); color:#111;
+    line-height:1.1; text-align:center; transform-origin:center;
+    animation:tapwiggle 1.6s ease-in-out infinite; transition:opacity .4s;
+    filter:drop-shadow(2px 2px 0 rgba(255,233,74,.95));
+  }
+  .tap-here.hide { opacity:0; }
+  @keyframes tapwiggle {
+    0%{transform:rotate(-6deg) scale(1);} 25%{transform:rotate(4deg) scale(1.08);}
+    50%{transform:rotate(-4deg) scale(1.04);} 75%{transform:rotate(5deg) scale(1.1);}
+    100%{transform:rotate(-6deg) scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){ .tap-here,.hint{ animation:none; } }
+
+  .buy {
+    pointer-events:auto; display:inline-block; margin-top:14px;
+    background:#111; color:#fff; font-weight:900; text-decoration:none;
+    padding:14px 28px; border-radius:30px; font-size:clamp(14px,3.5vmin,18px);
+    box-shadow:0 6px 0 rgba(0,0,0,.25); transition:transform .12s;
+  }
+  .buy:active { transform:scale(.96); }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <img id="char" src="" alt="">
+</div>
+
+<div class="ui">
+  <div class="name" id="name"></div>
+  <div class="tap-here" id="tapHere">TAP<br>HERE</div>
+  <div class="bottom">
+    <div class="hint" id="hint">タップで色がかわるよ!</div><br>
+    <a class="buy" id="buy" href="#" target="_blank" rel="noopener">🛒 購入する</a>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   COLOR TAP 統一フォーマット — ここだけ書き換えれば新キャラ完成
+   ========================================================= */
+const CONFIG = {
+  character: "SUE",                         // 表示名
+  baseImage: "art/sue.png",                 // 透過キーアートPNG（正方形・1080px推奨）
+  bg: "#4466ff",                            // 背景色
+  baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
+
+  // 6色パレット（hue/sat/bri は赤ベース基準。baseHueOffset で全体を補正）
+  palettes: [
+    { name:"BLAZE RED",    hue:0,   sat:2.0, bri:1.10 },
+    { name:"SUNNY YELLOW", hue:50,  sat:2.2, bri:1.10 },
+    { name:"SLIME GREEN",  hue:120, sat:2.5, bri:1.05 },
+    { name:"ICE CYAN",     hue:175, sat:2.5, bri:1.05 },
+    { name:"GALAXY BLUE",  hue:230, sat:2.5, bri:1.05 },
+    { name:"NEON PINK",    hue:300, sat:2.5, bri:1.00 },
+  ],
+
+  // 購入リンク（Shopify or CHARAMARL）。variants 空なら productUrl のみ
+  shop: {
+    productUrl: "https://thedinorenny.online/products/...",
+    variants: {                              // 色名: Shopify variant ID
+      "BLAZE RED":"", "SUNNY YELLOW":"", "SLIME GREEN":"",
+      "ICE CYAN":"", "GALAXY BLUE":"", "NEON PINK":"",
+    }
+  }
+};
+/* ========================================================= */
+
+document.title = "DinoRenny " + CONFIG.character + " COLOR TAP";
+document.body.style.setProperty("--bg", CONFIG.bg);
+document.getElementById("char").src = CONFIG.baseImage;
+
+const stage = document.getElementById("stage");
+const img   = document.getElementById("char");
+const nameEl= document.getElementById("name");
+const hint  = document.getElementById("hint");
+const tapHere = document.getElementById("tapHere");
+const buyEl = document.getElementById("buy");
+
+let idx = 0, tapped = false;
+
+function apply(p){
+  img.style.setProperty("--hue", (p.hue + CONFIG.baseHueOffset) + "deg");
+  img.style.setProperty("--sat", p.sat);
+  img.style.setProperty("--bri", p.bri);
+  nameEl.textContent = p.name;
+  const vid = CONFIG.shop.variants[p.name];
+  buyEl.href = vid ? CONFIG.shop.productUrl + "?variant=" + vid : CONFIG.shop.productUrl;
+  buyEl.textContent = "🛒 " + p.name + " を購入";
+}
+apply(CONFIG.palettes[0]);
+
+stage.addEventListener("click", () => {
+  if(!tapped){ tapped = true; hint.classList.add("hide"); tapHere.classList.add("hide"); }
+  idx = (idx + 1) % CONFIG.palettes.length;
+  apply(CONFIG.palettes[idx]);
+  stage.classList.remove("pop"); void stage.offsetWidth; stage.classList.add("pop");
+});
+</script>
+</body>
+</html>
