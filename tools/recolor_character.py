@@ -29,6 +29,7 @@ from PIL import Image
 
 SIZE = 760
 WHITE_THR = 238
+CROP_MARGIN = 0.06   # 輪郭クロップ時の余白（大きく見せる）
 
 # 6色の目標（体の色相）。歯/舌/口/羽は触らないので、ここは体だけに効く。
 TARGETS = [
@@ -70,7 +71,22 @@ def build_base(src):
                 if r > WHITE_THR and g > WHITE_THR and b > WHITE_THR:
                     vis[ny, nx] = True
                     q.append((ny, nx))
-    return np.array(im), alpha
+
+    rgb = np.array(im)
+    # キャラの輪郭に合わせて正方形クロップ（余白を詰めて大きく見せる）
+    ys, xs = np.where(alpha > 10)
+    if len(xs):
+        cx, cy = (xs.min()+xs.max())/2, (ys.min()+ys.max())/2
+        half = max(xs.max()-xs.min(), ys.max()-ys.min())/2 * (1 + CROP_MARGIN)
+        L, T, R, B = int(cx-half), int(cy-half), int(cx+half), int(cy+half)
+        rgb_c = np.full((B-T, R-L, 3), 255, np.uint8)
+        a_c = np.zeros((B-T, R-L), np.uint8)
+        sy0, sx0 = max(T,0), max(L,0); sy1, sx1 = min(B,h), min(R,w)
+        dy0, dx0 = sy0-T, sx0-L
+        rgb_c[dy0:dy0+(sy1-sy0), dx0:dx0+(sx1-sx0)] = rgb[sy0:sy1, sx0:sx1]
+        a_c[dy0:dy0+(sy1-sy0), dx0:dx0+(sx1-sx0)] = alpha[sy0:sy1, sx0:sx1]
+        return rgb_c, a_c
+    return rgb, alpha
 
 
 def detect_base_hue(rgb):
