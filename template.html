@@ -152,6 +152,10 @@ document.body.style.setProperty("--bg", CONFIG.bg);
 document.getElementById("char").src = CONFIG.baseImage;
 // 商品未設定なら購入ボタンを隠す
 const shopReady = CONFIG.shop.productUrl && !CONFIG.shop.productUrl.includes("...");
+// image方式は全色を事前読み込みしてタップ即時切替（遅延防止）
+if(CONFIG.mode === "image"){
+  CONFIG.palettes.forEach(p => { const im = new Image(); im.src = `${CONFIG.imageDir}/${CONFIG.imageKey}_${p.key}.png`; });
+}
 
 const stage = document.getElementById("stage");
 const img   = document.getElementById("char");
