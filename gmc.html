@@ -18,21 +18,24 @@
     position:relative; width:min(94vmin,680px); aspect-ratio:1;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; user-select:none;
-    filter:url(#boil);
+    transform-origin: 50% 78%;
+    /* 揺らぎ(boil)＋静止時は少し暗く＝映え */
+    filter:url(#boil) brightness(.94);
+    -webkit-transform: translateZ(0);          /* iOSの消失バグ回避 */
   }
-  @media (prefers-reduced-motion: reduce){ .stage{ filter:none; } }
+  @media (prefers-reduced-motion: reduce){ .stage{ filter:url(#boil); } }
   .stage img {
     width:100%; height:100%; object-fit:contain;
     filter: hue-rotate(var(--hue,0deg)) saturate(var(--sat,1)) brightness(var(--bri,1));
     transition: filter .3s ease;
-    transform-origin: 50% 78%;
   }
-  .stage.pop img { animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
+  /* pop は .stage 自身に。filter+transform を同一要素にしてiOSの消失を防ぐ */
+  .stage.pop { animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
   @keyframes pop {
-    0%   { transform: translateY(0)    scale(1)    rotate(0deg); }
-    25%  { transform: translateY(-14%) scale(1.12) rotate(-5deg); }
+    0%   { transform: translateY(0)    scale(1)    rotate(0deg); filter:url(#boil) brightness(1.12); }  /* タップ瞬間=明るく */
+    25%  { transform: translateY(-14%) scale(1.12) rotate(-5deg); }                                     /* ぴょん */
     55%  { transform: translateY(2%)   scale(.96)  rotate(4deg); }
-    100% { transform: translateY(0)    scale(1)    rotate(0deg); }
+    100% { transform: translateY(0)    scale(1)    rotate(0deg); filter:url(#boil) brightness(.94); }   /* 揺らぎ=少し暗く */
   }
 
   .ui { position:fixed; inset:0; pointer-events:none; }
@@ -88,6 +91,7 @@
 </head>
 <body>
 
+<!-- 手描き風の揺らぎ（boil）フィルター -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="boil" x="-5%" y="-5%" width="110%" height="110%">
     <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="1" result="n">
@@ -116,19 +120,23 @@
    ========================================================= */
 const CONFIG = {
   character: "GMC",                         // 表示名
-  baseImage: "art/gmc.png",                 // 透過キーアートPNG
+  baseImage: "art/gmc.png",                 // 透過キーアートPNG（正方形・1080px推奨）
   bg: "#F2EDE2",                            // 初期背景色
-  mode: "char",                             // 帽子・靴などアクセントの色が変わる
-  baseHueOffset: 0,                         // 帽子=オレンジ/靴=赤（赤ベース）なので補正0
+  mode: "char",                             // "char"=キャラの色が変わる / "bg"=背景の色が変わる（黒系キャラ向け）
+  baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
 
-  // 6色パレット（hue/sat/bri は赤ベース基準。baseHueOffset で全体を補正）
+  // mode:"image" のとき使う。事前生成PNG = `${imageDir}/${imageKey}_${key}.png`
+  imageDir: "art/colors",
+  imageKey: "sue",
+
+  // 6色パレット（key=画像/色名キー。hue/sat/bri は char モード用）
   palettes: [
-    { name:"BLAZE RED",    hue:0,   sat:2.0, bri:1.12 },
-    { name:"SUNNY YELLOW", hue:50,  sat:2.1, bri:1.14 },
-    { name:"SLIME GREEN",  hue:120, sat:2.3, bri:1.10 },
-    { name:"ICE CYAN",     hue:175, sat:2.3, bri:1.18 },
-    { name:"GALAXY BLUE",  hue:225, sat:1.9, bri:1.40 },
-    { name:"NEON PINK",    hue:300, sat:2.2, bri:1.14 },
+    { key:"red",    name:"BLAZE RED",    hue:0,   sat:2.0, bri:1.12 },
+    { key:"yellow", name:"SUNNY YELLOW", hue:50,  sat:2.1, bri:1.14 },
+    { key:"green",  name:"SLIME GREEN",  hue:120, sat:2.3, bri:1.10 },
+    { key:"cyan",   name:"ICE CYAN",     hue:175, sat:2.3, bri:1.18 },
+    { key:"blue",   name:"GALAXY BLUE",  hue:225, sat:1.9, bri:1.40 },
+    { key:"pink",   name:"NEON PINK",    hue:300, sat:2.2, bri:1.14 },
   ],
 
   // 購入リンク（Shopify or CHARAMARL）。variants 空なら productUrl のみ
@@ -147,6 +155,10 @@ document.body.style.setProperty("--bg", CONFIG.bg);
 document.getElementById("char").src = CONFIG.baseImage;
 // 商品未設定なら購入ボタンを隠す
 const shopReady = CONFIG.shop.productUrl && !CONFIG.shop.productUrl.includes("...");
+// image方式は全色を事前読み込みしてタップ即時切替（遅延防止）
+if(CONFIG.mode === "image"){
+  CONFIG.palettes.forEach(p => { const im = new Image(); im.src = `${CONFIG.imageDir}/${CONFIG.imageKey}_${p.key}.png`; });
+}
 
 const stage = document.getElementById("stage");
 const img   = document.getElementById("char");
@@ -158,7 +170,11 @@ const buyEl = document.getElementById("buy");
 let idx = 0, tapped = false;
 
 function apply(p){
-  if(CONFIG.mode === "bg"){
+  if(CONFIG.mode === "image"){
+    // 事前生成の鮮やかPNGを差し替え（最も正確）
+    img.style.filter = "none";
+    img.src = `${CONFIG.imageDir}/${CONFIG.imageKey}_${p.key}.png`;
+  } else if(CONFIG.mode === "bg"){
     // 背景の色が変わる（黒系キャラ向け）
     document.body.style.background = `hsl(${p.hue}, 85%, 62%)`;
   } else {
@@ -168,7 +184,7 @@ function apply(p){
     img.style.setProperty("--bri", p.bri);
   }
   nameEl.textContent = p.name;
-  nameEl.classList.remove("show"); void nameEl.offsetWidth; nameEl.classList.add("show");
+  nameEl.classList.remove("show"); void nameEl.offsetWidth; nameEl.classList.add("show"); // ぱっと出てフェイドアウト
   if(shopReady){
     const vid = CONFIG.shop.variants[p.name];
     buyEl.href = vid ? CONFIG.shop.productUrl + "?variant=" + vid : CONFIG.shop.productUrl;
@@ -179,7 +195,7 @@ function apply(p){
 }
 apply(CONFIG.palettes[0]);
 
-stage.addEventListener("click", () => {
+stage.addEventListener("pointerdown", () => {           // タッチした瞬間に発火（遅延なし）
   if(!tapped){ tapped = true; hint.classList.add("hide"); tapHere.classList.add("hide"); }
   idx = (idx + 1) % CONFIG.palettes.length;
   apply(CONFIG.palettes[idx]);
