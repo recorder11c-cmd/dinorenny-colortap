@@ -8,14 +8,14 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body { height:100%; }
   body {
-    background: var(--bg, #4466ff);
+    background: var(--bg, #F2EDE2);
     display:flex; align-items:center; justify-content:center;
     overflow:hidden; font-family:'Comic Sans MS','Chalkboard SE',cursive;
     transition: background .35s ease;
     -webkit-tap-highlight-color: transparent;
   }
   .stage {
-    position:relative; width:min(86vmin,560px); aspect-ratio:1;
+    position:relative; width:min(94vmin,680px); aspect-ratio:1;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer; user-select:none;
     filter:url(#boil);
@@ -106,7 +106,7 @@
 const CONFIG = {
   character: "MOSSUN",
   baseImage: "art/colors/mossun_red.png",
-  bg: "#4466ff",                            // 初期背景色
+  bg: "#F2EDE2",                            // 初期背景色
   mode: "image",
   baseHueOffset: 0,                         // キャラのベース色相補正（赤=0 / 黄=-50 / 青=-210 など）
 
