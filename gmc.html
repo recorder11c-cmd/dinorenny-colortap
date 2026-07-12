@@ -84,6 +84,14 @@
     box-shadow:0 6px 0 rgba(0,0,0,.25); transition:transform .12s;
   }
   .buy:active { transform:scale(.96); }
+  .like {
+    pointer-events:auto; display:inline-flex; align-items:center; gap:8px; margin-top:14px;
+    background:#fff; border:3px solid #111; color:#e0245e; font-weight:900; font-family:inherit;
+    padding:12px 24px; border-radius:30px; font-size:clamp(14px,3.5vmin,18px); cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,.25); transition:transform .12s;
+  }
+  .like:active { transform:scale(.96); }
+  .like.on { background:#e0245e; border-color:#e0245e; color:#fff; }
 </style>
 </head>
 <body>
@@ -107,6 +115,7 @@
   <div class="tap-here" id="tapHere">TAP<br>HERE</div>
   <div class="bottom">
     <div class="hint" id="hint">タップで色がかわるよ!</div><br>
+    <button class="like" id="likeBtn" type="button" aria-pressed="false"><span id="likeIc">♡</span>いいね <b id="likeCt"></b></button>
     <a class="buy" id="buy" href="#" target="_blank" rel="noopener">🛒 購入する</a>
   </div>
 </div>
@@ -198,6 +207,36 @@ stage.addEventListener("pointerdown", () => {           // タッチした瞬間
   apply(CONFIG.palettes[idx]);
   stage.classList.remove("pop"); void stage.offsetWidth; stage.classList.add("pop");
 });
+
+// ♥ いいね（CHARAMARLの全体集計と共通 → トップのTRENDINGランキングに反映）
+const CM_API="https://charamarl.vercel.app/api/react", LIKE_ID="gmc", LIKE_BASE=52;
+const LIKE_KEY="colortap_likes";
+const likeSet=()=>{try{return new Set(JSON.parse(localStorage.getItem(LIKE_KEY)||"[]"));}catch(e){return new Set();}};
+let likeServer=0, likeKnown=false;
+const likeBtn=document.getElementById("likeBtn");
+function renderLike(){
+  const liked=likeSet().has(LIKE_ID);
+  likeBtn.classList.toggle("on",liked);
+  likeBtn.setAttribute("aria-pressed",String(liked));
+  document.getElementById("likeIc").textContent=liked?"♥":"♡";
+  document.getElementById("likeCt").textContent=LIKE_BASE+likeServer+((!likeKnown&&liked)?1:0);
+}
+fetch(CM_API+"?id="+LIKE_ID).then(r=>r.ok?r.json():null).then(d=>{
+  if(d&&typeof d.likes==="number"){likeServer=d.likes;likeKnown=true;renderLike();}
+}).catch(()=>{});
+likeBtn.addEventListener("pointerdown",e=>e.stopPropagation());
+likeBtn.addEventListener("click",()=>{
+  const s=likeSet();const had=s.has(LIKE_ID);
+  had?s.delete(LIKE_ID):s.add(LIKE_ID);
+  localStorage.setItem(LIKE_KEY,JSON.stringify([...s]));
+  fetch(CM_API,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id:LIKE_ID,type:"like",op:had?"remove":"add"})})
+    .then(r=>r.ok?r.json():null)
+    .then(d=>{if(d&&typeof d.count==="number"){likeServer=d.count;likeKnown=true;renderLike();}})
+    .catch(()=>{});
+  renderLike();
+});
+renderLike();
 </script>
 </body>
 </html>
