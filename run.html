@@ -3,11 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>DINORENNY RUN | SUE</title>
-<meta name="description" content="DinoRennyの恐竜ランゲーム。タップでジャンプ！サボテンをとび越えて、ハイスコアをねらえ。">
-<meta property="og:title" content="DINORENNY RUN | SUE">
-<meta property="og:description" content="タップでジャンプ！カラフル恐竜ランゲーム">
-<meta property="og:image" content="art/sue_pixel.png">
+<title>DINORENNY RUN</title>
+<meta name="description" content="DinoRennyの恐竜ランゲーム。タップでジャンプ！サボテンをとび越え、PUTTIをかわして、ハイスコアをねらえ。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dinorenny-colortap.vercel.app/run.html">
+<meta property="og:title" content="DINORENNY RUN">
+<meta property="og:description" content="タップでジャンプ！100点ごとに世界の色がかわるカラフル恐竜ランゲーム">
+<meta property="og:image" content="https://dinorenny-colortap.vercel.app/art/og_run.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DINORENNY RUN">
+<meta name="twitter:description" content="タップでジャンプ！100点ごとに世界の色がかわるカラフル恐竜ランゲーム">
+<meta name="twitter:image" content="https://dinorenny-colortap.vercel.app/art/og_run.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
@@ -223,6 +231,7 @@
   // ================= キャラ設定（差し替えはここだけ） =================
   // RUN_DIR : 主人公が走る向き 'right'（左→右。障害物は右から来る）/ 'left'（右→左）
   // sprite  : 正方形・背景透過PNG / facing : その絵の体の向き（走る向きと違えば自動で反転）
+  // 例) 別キャラにするとき: { name:'XXX', sprite:'art/xxx.png', facing:'right', credit:'XXX by ...' }
   // name    : シェア文・OGに使う名前 / credit : フッターのクレジット
   const RUN_DIR = 'right';
   const CHAR  = { name:'SUE', sprite:'art/sue_pixel.png', facing:'right', credit:'SUE & PUTTI by DinoRenny' };
