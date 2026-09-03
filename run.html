@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dino">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DINORENNY RUN | ahoyoung</title>
+<meta name="description" content="DinoRennyの恐竜ランゲーム。タップでジャンプ！サボテンをとび越えて、ハイスコアをねらえ。">
+<meta property="og:title" content="DINORENNY RUN | ahoyoung">
+<meta property="og:description" content="タップでジャンプ！カラフル恐竜ランゲーム">
+<meta property="og:image" content="art/ahoyoung.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px;
+    --tap-min:44px; --content-max:640px;
+    --font-display:"M PLUS Rounded 1c",sans-serif;
+    --font-body:"M PLUS Rounded 1c","Noto Sans JP",sans-serif;
+    --bg:#FFF6E5; --surface:#FFFFFF; --ink:#1B1B1F; --ink-soft:#6B6660; --line:#1B1B1F;
+    --accent:#FFD400; --accent-2:#E5484D; --radius:16px;
+    --pink:#FF3EA5; --cyan:#00D4FF; --yellow:#FFE000; --lime:#7FE000; --orange:#FF7A00;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    font-family:var(--font-body); color:var(--ink); background:var(--pink);
+    min-height:100dvh; line-height:1.6; font-feature-settings:"palt";
+    -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;
+    overflow-x:hidden; touch-action:manipulation;
+  }
+  body::before{
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,.18) 6px, transparent 6px),
+      radial-gradient(circle, rgba(0,212,255,.15) 4px, transparent 4px);
+    background-size:80px 80px, 40px 40px; background-position:0 0, 20px 20px;
+    transition:background-color .6s;
+  }
+  .num{font-variant-numeric:tabular-nums;}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+
+  .wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:18px 12px 40px;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+  .logo{
+    font-family:var(--font-display);font-weight:900;font-size:clamp(18px,5vw,26px);letter-spacing:.06em;
+    color:#fff;background:var(--ink);padding:6px 14px;border:3px solid #fff;box-shadow:4px 4px 0 #fff;
+    text-decoration:none;line-height:1.2;
+  }
+  .logo small{display:block;font-size:10px;letter-spacing:.3em;font-weight:800;color:var(--accent);}
+  .scores{display:flex;gap:6px;}
+  .chip{
+    background:#fff;border:3px solid var(--ink);border-radius:999px;padding:4px 12px;
+    font-weight:900;font-size:clamp(12px,3.4vw,15px);box-shadow:3px 3px 0 var(--ink);white-space:nowrap;
+  }
+  .chip b{color:var(--accent-2);}
+
+  .card{
+    position:relative;background:var(--surface);border:3px solid var(--ink);border-radius:var(--radius);
+    box-shadow:6px 6px 0 var(--ink);overflow:hidden;
+  }
+  canvas{display:block;width:100%;aspect-ratio:720/300;cursor:pointer;touch-action:none;background:#FFE0F1;}
+
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;text-align:center;padding:12px;pointer-events:none;
+  }
+  .overlay.hide{display:none;}
+  .ttl{
+    font-family:var(--font-display);font-weight:900;font-size:clamp(22px,7vw,44px);line-height:1.05;
+    color:#fff;-webkit-text-stroke:1.5px var(--ink);
+    text-shadow:3px 3px 0 var(--ink);letter-spacing:.02em;
+    animation:bob 1.6s ease-in-out infinite;
+  }
+  .ttl span{color:var(--accent);}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
+  .sub{font-weight:900;font-size:clamp(12px,3.6vw,16px);background:#fff;border:3px solid var(--ink);
+       border-radius:999px;padding:4px 14px;box-shadow:3px 3px 0 var(--ink);}
+  .btn{
+    pointer-events:auto;min-height:var(--tap-min);font-family:inherit;font-weight:900;font-size:clamp(14px,4vw,18px);
+    padding:10px 26px;border-radius:999px;border:3px solid var(--ink);cursor:pointer;color:var(--ink);
+    box-shadow:0 5px 0 var(--ink);transition:transform .12s,box-shadow .12s;background:#fff;
+  }
+  .btn.main{background:var(--accent);}
+  .btn:active{transform:translateY(3px) scale(.97);box-shadow:0 2px 0 var(--ink);}
+  .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;pointer-events:auto;}
+  .result{
+    background:#fff;border:3px solid var(--ink);border-radius:var(--radius);box-shadow:4px 4px 0 var(--ink);
+    padding:8px 20px;font-weight:900;font-size:clamp(13px,3.8vw,18px);
+  }
+  .result .big{font-size:clamp(28px,9vw,52px);line-height:1;color:var(--accent-2);display:block;}
+  .result .new{display:inline-block;background:var(--accent);border:2px solid var(--ink);border-radius:8px;
+               padding:0 8px;font-size:12px;margin-left:6px;transform:rotate(-4deg);}
+  .result .new[hidden]{display:none;}
+  .gameover .ttl{animation:none;color:var(--accent-2);}
+
+  .help{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;font-weight:800;font-size:12px;}
+  .help span{background:#fff;border:2px solid var(--ink);border-radius:999px;padding:3px 12px;box-shadow:2px 2px 0 var(--ink);}
+  .help kbd{font-family:inherit;background:var(--accent);padding:0 5px;border-radius:5px;border:1.5px solid var(--ink);}
+  footer{margin-top:18px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-shadow:1px 1px 0 var(--ink);}
+  footer a{color:#fff;}
+
+  .share-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:700;display:none;align-items:flex-end;justify-content:center;}
+  .share-overlay.open{display:flex;}
+  .share-menu{background:#fff;border-radius:22px 22px 0 0;padding:20px 22px 30px;width:min(480px,100%);}
+  @media(min-width:600px){ .share-overlay{align-items:center;} .share-menu{border-radius:22px;border:3px solid var(--ink);} }
+  .share-title{font-weight:900;font-size:15px;margin-bottom:14px;text-align:center;}
+  .share-grid{display:flex;flex-direction:column;gap:6px;}
+  .share-opt{display:flex;align-items:center;gap:12px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:800;color:var(--ink);padding:10px 8px;border-radius:12px;width:100%;min-height:var(--tap-min);}
+  .share-opt:hover{background:#f5f5f5;}
+  .share-ic{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
+
+  @media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none!important;transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="./">DINORENNY<small>RUN</small></a>
+    <div class="scores">
+      <div class="chip num">SCORE <b id="scoreNow">0</b></div>
+      <div class="chip num">HI <b id="scoreHi">0</b></div>
+    </div>
+  </header>
+
+  <div class="card" id="card">
+    <canvas id="game" width="720" height="300" aria-label="DINORENNY RUN ゲーム画面"></canvas>
+
+    <div class="overlay" id="startOv">
+      <div class="ttl">DINORENNY <span>RUN</span></div>
+      <div class="sub">タップ / スペースで スタート！</div>
+      <button class="btn main" id="startBtn" type="button">▶ はしる！</button>
+    </div>
+
+    <div class="overlay gameover hide" id="overOv">
+      <div class="ttl">GAME OVER</div>
+      <div class="result num">SCORE<span class="big" id="finalScore">0</span><span id="newHi" class="new" hidden>NEW RECORD!</span></div>
+      <div class="row">
+        <button class="btn main" id="retryBtn" type="button">↻ もう一回</button>
+        <button class="btn" id="shareBtn" type="button">🚀 シェア</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="help">
+    <span>タップ / <kbd>SPACE</kbd> ジャンプ</span>
+    <span><kbd>↓</kbd> しゃがむ</span>
+    <span>100点ごとに世界の色がかわる</span>
+  </div>
+  <footer>© DinoRenny / character by ahoyoung</footer>
+</div>
+
+<div class="share-overlay" id="shareOverlay">
+  <div class="share-menu">
+    <div class="share-title">シェアする</div>
+    <div class="share-grid">
+      <button class="share-opt" data-sh="x"><span class="share-ic" style="background:#111;color:#fff">𝕏</span>X</button>
+      <button class="share-opt" data-sh="line"><span class="share-ic" style="background:#06C755;color:#fff">LINE</span>LINE</button>
+      <button class="share-opt" data-sh="copy"><span class="share-ic" style="background:#f0f0f0">🔗</span><span id="shCopyLb">リンクをコピー</span></button>
+      <button class="share-opt" data-sh="native" id="shNative"><span class="share-ic" style="background:#f0f0f0">📲</span>その他</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ================= 設定 =================
+  let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
+  const SPRITE_SRC = 'art/ahoyoung.png';
+  const HI_KEY = 'dr_run_hi';
+  // 100点ごとに切り替わる世界の色（DinoRennyパレット）
+  const WORLDS = [
+    { sky:['#FFE0F1','#FF9BD3'], ground:'#FF3EA5', far:'#FFB3DE', cactus:'#00D4FF', cactus2:'#7FE000', page:'#FF3EA5', name:'NEON PINK' },
+    { sky:['#DFF9FF','#7FE6FF'], ground:'#00D4FF', far:'#A6EEFF', cactus:'#FF3EA5', cactus2:'#FFE000', page:'#00D4FF', name:'ICE CYAN' },
+    { sky:['#FFF9C4','#FFE55C'], ground:'#FFE000', far:'#FFF1A6', cactus:'#E8302A', cactus2:'#00D4FF', page:'#FFE000', name:'SUNNY YELLOW' },
+    { sky:['#EAFFC9','#B9F56A'], ground:'#7FE000', far:'#D6FF9E', cactus:'#FF3EA5', cactus2:'#FF7A00', page:'#7FE000', name:'SLIME GREEN' },
+    { sky:['#FFE7CC','#FFB066'], ground:'#FF7A00', far:'#FFCF9E', cactus:'#00D4FF', cactus2:'#FF3EA5', page:'#FF7A00', name:'BLAZE ORANGE' },
+    { sky:['#E4E0FF','#9C8CFF'], ground:'#6C4BFF', far:'#C6BDFF', cactus:'#FFE000', cactus2:'#00D4FF', page:'#6C4BFF', name:'GALAXY PURPLE' },
+  ];
+
+  // ================= DOM =================
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  const startOv = document.getElementById('startOv');
+  const overOv = document.getElementById('overOv');
+  const scoreNowEl = document.getElementById('scoreNow');
+  const scoreHiEl = document.getElementById('scoreHi');
+  const finalEl = document.getElementById('finalScore');
+  const newHiEl = document.getElementById('newHi');
+
+  // HiDPI
+  function fit(){
+    W = window.innerWidth < 600 ? 520 : 720;
+    dino.x = W - 200;
+    cv.style.aspectRatio = W + '/' + H;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // ================= スプライト =================
+  const sprite = { img:null, ready:false, canvas:null, w:0, h:0 };
+  const im = new Image();
+  im.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext('2d');
+    g.drawImage(im, 0, 0);   // 左向きのまま（しっぽのサインが鏡文字にならないよう、世界の方を左→右に流す）
+    sprite.canvas = c; sprite.w = c.width; sprite.h = c.height; sprite.ready = true;
+  };
+  im.src = SPRITE_SRC;
+
+  // ================= 音（WebAudio・小さなビープ） =================
+  let ac = null;
+  function beep(freq, dur, type='square', vol=.08, slide=0){
+    try{
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, ac.currentTime);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), ac.currentTime + dur);
+      g.gain.setValueAtTime(vol, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + dur);
+    }catch(e){}
+  }
+
+  // ================= ゲーム状態 =================
+  const S = { state:'title', t:0, speed:6, dist:0, score:0, hi:0, worldIdx:0, worldMix:0, shake:0 };
+  const dino = { x:720-200, y:GROUND, vy:0, size:118, duck:false, onGround:true, runT:0, squash:0 };
+  fit(); window.addEventListener('resize', fit);
+  let obstacles = [], clouds = [], particles = [], flashes = [], hills = [];
+  let spawnGap = 0, lastFrame = 0;
+
+  try { S.hi = +localStorage.getItem(HI_KEY) || 0; } catch(e){}
+  scoreHiEl.textContent = S.hi;
+
+  function resetWorld(){
+    obstacles = []; particles = []; flashes = [];
+    clouds = Array.from({length:5}, (_,i) => ({ x:i*180 + Math.random()*120, y:30 + Math.random()*90, s:.7 + Math.random()*.8 }));
+    hills = Array.from({length:7}, (_,i) => ({ x:i*140, w:120 + Math.random()*120, h:40 + Math.random()*70 }));
+    spawnGap = 60;
+  }
+  resetWorld();
+
+  function start(){
+    S.state = 'play'; S.t = 0; S.speed = 6; S.dist = 0; S.score = 0; S.worldIdx = 0; S.worldMix = 0; S.shake = 0;
+    dino.y = GROUND; dino.vy = 0; dino.duck = false; dino.onGround = true; dino.squash = 0;
+    resetWorld();
+    startOv.classList.add('hide'); overOv.classList.add('hide');
+    setPageColor(WORLDS[0].page);
+    beep(660, .12, 'square', .06, 300);
+  }
+  function gameOver(){
+    S.state = 'over'; S.shake = 14;
+    beep(220, .35, 'sawtooth', .09, -160);
+    burst(dino.x + dino.size*.5, dino.y - dino.size*.5, 28, ['#E5484D','#FFD400','#fff']);
+    if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+    finalEl.textContent = S.score;
+    const isNew = S.score > S.hi;
+    if (isNew){ S.hi = S.score; try{ localStorage.setItem(HI_KEY, S.hi); }catch(e){} scoreHiEl.textContent = S.hi; }
+    newHiEl.hidden = !isNew;
+    setTimeout(() => overOv.classList.remove('hide'), 350);
+  }
+  function jump(){
+    if (S.state !== 'play') return;
+    if (dino.onGround){
+      dino.vy = dino.duck ? -15 : -16.5; dino.onGround = false; dino.duck = false;
+      beep(520, .14, 'square', .05, 260);
+      burst(dino.x + dino.size*.6, GROUND, 8, ['#fff', '#FFD400']);
+    }
+  }
+  function setPageColor(c){ document.body.style.backgroundColor = c; }
+
+  // ================= 入力 =================
+  function pressAction(){
+    if (S.state === 'title') start();
+    else if (S.state === 'play') jump();
+    else if (S.state === 'over' && !overOv.classList.contains('hide')) start();
+  }
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); pressAction(); });
+  document.getElementById('startBtn').addEventListener('click', start);
+  document.getElementById('retryBtn').addEventListener('click', start);
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); if (!e.repeat) pressAction(); }
+    if (e.code === 'ArrowDown'){ e.preventDefault(); if (S.state==='play'){ dino.duck = true; if(!dino.onGround) dino.vy += 2.5; } }
+  });
+  window.addEventListener('keyup', e => { if (e.code === 'ArrowDown') dino.duck = false; });
+
+  // ================= 生成 =================
+  function spawnObstacle(){
+    const canBird = S.score >= 250 && Math.random() < .3;
+    if (canBird){
+      const lanes = [GROUND - 22, GROUND - 78, GROUND - 130];
+      obstacles.push({ type:'bird', x:-100, y:lanes[Math.floor(Math.random()*lanes.length)], w:52, h:34, flap:0 });
+    } else {
+      const big = Math.random() < .4;
+      const n = Math.random() < .55 ? 1 : (Math.random() < .6 || big ? 2 : 3);   // 大サボテンは最大2連
+      const h = big ? 66 + Math.random()*12 : 48 + Math.random()*12;
+      const w = big ? 36 : 28;
+      obstacles.push({ type:'cactus', x:-(n*w + (n-1)*4) - 40, y:GROUND, w:n*w + (n-1)*4, h, n, single:w, big });
+    }
+  }
+  function burst(x, y, n, cols){
+    for (let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2, sp = 2 + Math.random()*5;
+      particles.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 2, life:40 + Math.random()*20, c:cols[i%cols.length], r:3 + Math.random()*4 });
+    }
+  }
+
+  // ================= 当たり判定 =================
+  function dinoBox(){
+    const s = dino.size;
+    if (dino.duck && dino.onGround) return { x:dino.x + s*.22, y:GROUND - s*.45, w:s*.62, h:s*.45 };
+    return { x:dino.x + s*.24, y:dino.y - s*.78, w:s*.52, h:s*.74 };
+  }
+  function hit(a, b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+  // ================= 更新 =================
+  function update(dt){
+    S.t += dt;
+    // 雲・丘はタイトル中も流す
+    clouds.forEach(c => { c.x += (S.state==='play' ? S.speed : 2) * .25 * dt * c.s; if (c.x > W + 80){ c.x = -140; c.y = 30 + Math.random()*90; } });
+    hills.forEach(h => { h.x += (S.state==='play' ? S.speed : 2) * .4 * dt; if (h.x > W + 20) h.x = -h.w - 20; });
+    particles.forEach(p => { p.x += p.vx*dt; p.y += p.vy*dt; p.vy += .25*dt; p.life -= dt; });
+    particles = particles.filter(p => p.life > 0);
+    flashes.forEach(f => f.life -= dt); flashes = flashes.filter(f => f.life > 0);
+    if (S.shake > 0) S.shake = Math.max(0, S.shake - dt*1.2);
+
+    // 走りアニメ
+    dino.runT += dt * (S.state==='play' ? S.speed*.06 : .12);
+    if (dino.squash > 0) dino.squash = Math.max(0, dino.squash - dt*.12);
+
+    if (S.state !== 'play') return;
+
+    // 物理
+    dino.vy += .8 * dt; dino.y += dino.vy * dt;
+    if (dino.y >= GROUND){ if(!dino.onGround){ dino.squash = 1; burst(dino.x + dino.size*.4, GROUND, 6, ['#fff','#1B1B1F']); } dino.y = GROUND; dino.vy = 0; dino.onGround = true; }
+
+    // 速度・スコア
+    S.speed = Math.min(14, 6 + S.dist / 180);
+    S.dist += S.speed * dt * .03;
+    const prev = S.score;
+    S.score = Math.floor(S.dist);
+    if (S.score !== prev) scoreNowEl.textContent = S.score;
+    if (Math.floor(S.score/100) !== Math.floor(prev/100) && S.score > 0){
+      S.worldIdx = Math.floor(S.score/100) % WORLDS.length;
+      setPageColor(WORLDS[S.worldIdx].page);
+      flashes.push({ text: WORLDS[S.worldIdx].name, life: 70 });
+      beep(880, .1, 'square', .05); setTimeout(()=>beep(1320,.16,'square',.05), 90);
+      burst(W*.5, 90, 40, ['#FF3EA5','#00D4FF','#FFE000','#7FE000','#FF7A00','#fff']);
+    }
+    S.worldMix += (1 - S.worldMix) * Math.min(1, .04*dt); // (予約: 補間用)
+
+    // 障害物
+    spawnGap -= dt;
+    if (spawnGap <= 0){
+      spawnObstacle();
+      const base = 75 - Math.min(35, S.speed*2.5);
+      spawnGap = base + Math.random()*70;
+    }
+    obstacles.forEach(o => { o.x += S.speed * dt; if (o.type==='bird'){ o.x += 1.2*dt; o.flap += dt*.25; } });
+    obstacles = obstacles.filter(o => o.x < W + 10);
+
+    const db = dinoBox();
+    for (const o of obstacles){
+      const ob = o.type==='bird' ? { x:o.x+8, y:o.y-o.h+6, w:o.w-16, h:o.h-12 } : { x:o.x+5, y:o.y-o.h+10, w:o.w-10, h:o.h-10 };
+      if (hit(db, ob)){ gameOver(); break; }
+    }
+  }
+
+  // ================= 描画 =================
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+  function drawCactus(o, world){
+    const cols = [world.cactus, world.cactus2, '#FF3EA5', '#FFE000'];
+    for (let i=0;i<o.n;i++){
+      const x = o.x + i*(o.single+4), w = o.single, h = o.h - (i%2 ? 8 : 0);
+      const c = cols[(i + S.worldIdx) % cols.length];
+      ctx.fillStyle = c; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
+      // 幹
+      rr(x + w*.28, o.y - h, w*.44, h, 8); ctx.fill(); ctx.stroke();
+      // 腕
+      const ay = o.y - h*.62;
+      rr(x, ay, w*.32, h*.36, 6); ctx.fill(); ctx.stroke();
+      rr(x + w*.68, ay - 10, w*.32, h*.38, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#1B1B1F';
+      ctx.fillRect(x + w*.28 - 2, ay + 8, w*.32+2, 6); ctx.fillRect(x + w*.68 - 2, ay - 2, w*.34, 6);
+      // 顔
+      ctx.fillStyle = '#1B1B1F';
+      ctx.beginPath(); ctx.arc(x + w*.42, o.y - h + 16, 2.6, 0, 7); ctx.arc(x + w*.58, o.y - h + 16, 2.6, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; rr(x + w*.34, o.y - h + 6, 5, h*.5, 3); ctx.fill();
+    }
+  }
+  function drawBird(o){
+    const f = Math.sin(o.flap) ;
+    ctx.save(); ctx.translate(o.x, o.y - o.h);
+    ctx.fillStyle = '#6C4BFF'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
+    // 体
+    rr(6, 12, 40, 18, 9); ctx.fill(); ctx.stroke();
+    // 羽
+    ctx.fillStyle = '#FFE000';
+    ctx.beginPath(); ctx.moveTo(22, 18); ctx.lineTo(8, 18 - 18*f); ctx.lineTo(34, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // くちばし
+    ctx.fillStyle = '#FF7A00'; ctx.beginPath(); ctx.moveTo(44, 18); ctx.lineTo(58, 22); ctx.lineTo(44, 26); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // 目
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(36, 19, 4, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1B1B1F'; ctx.beginPath(); ctx.arc(37, 19, 1.8, 0, 7); ctx.fill();
+    ctx.restore();
+  }
+  function drawDino(){
+    const s = dino.size;
+    ctx.save();
+    // 走り：上下バウンド＋傾き、着地でつぶれ、しゃがみで平たく
+    const run = S.state==='play' ? Math.abs(Math.sin(dino.runT)) : Math.abs(Math.sin(dino.runT))*.5;
+    const bob = dino.onGround ? -run*6 : 0;
+    const rot = dino.onGround ? Math.sin(dino.runT)*.05 : Math.max(-.35, Math.min(.25, -dino.vy*.03));  // 左向き：上昇で鼻先が上がる
+    let sx = 1, sy = 1;
+    if (dino.squash > 0){ sx = 1 + dino.squash*.18; sy = 1 - dino.squash*.18; }
+    if (dino.duck && dino.onGround){ sx = 1.25; sy = .62; }
+    ctx.translate(dino.x + s*.5, dino.y + bob);
+    ctx.rotate(rot); ctx.scale(sx, sy);
+    // 影
+    ctx.restore(); ctx.save();
+    ctx.globalAlpha = .18; ctx.fillStyle = '#1B1B1F';
+    const shw = s*.55 * (1 - (GROUND - dino.y)/400);
+    ctx.beginPath(); ctx.ellipse(dino.x + s*.5, GROUND + 6, Math.max(20, shw), 7, 0, 0, 7); ctx.fill();
+    ctx.restore(); ctx.save();
+    ctx.translate(dino.x + s*.5, dino.y + bob);
+    ctx.rotate(rot); ctx.scale(sx, sy);
+    if (sprite.ready){
+      ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s);
+    } else {
+      ctx.fillStyle = '#1B1B1F'; rr(-s*.3, -s*.8, s*.6, s*.8, 14); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function draw(){
+    const world = WORLDS[S.worldIdx];
+    ctx.save();
+    if (S.shake > 0) ctx.translate((Math.random()-.5)*S.shake, (Math.random()-.5)*S.shake);
+
+    // 空
+    const sky = ctx.createLinearGradient(0,0,0,GROUND);
+    sky.addColorStop(0, world.sky[0]); sky.addColorStop(1, world.sky[1]);
+    ctx.fillStyle = sky; ctx.fillRect(-20, -20, W+40, H+40);
+
+    // 太陽
+    ctx.fillStyle = '#FFE000'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(120, 70, 30, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1B1B1F';
+    ctx.beginPath(); ctx.arc(110, 66, 3, 0, 7); ctx.arc(130, 66, 3, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(120, 74, 9, .2, Math.PI-.2); ctx.lineWidth = 2.5; ctx.stroke();
+
+    // 雲
+    clouds.forEach(c => {
+      ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.s, c.s);
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3/c.s;
+      ctx.beginPath(); ctx.arc(0,0,18,0,7); ctx.arc(22,-8,22,0,7); ctx.arc(46,0,18,0,7); ctx.rect(0,0,46,18); ctx.fill();
+      ctx.beginPath(); ctx.arc(0,0,18,Math.PI*.5,Math.PI*1.5); ctx.arc(22,-8,22,Math.PI*1.1,Math.PI*1.9); ctx.arc(46,0,18,Math.PI*1.5,Math.PI*.5); ctx.closePath(); ctx.stroke();
+      ctx.restore();
+    });
+
+    // 遠景の丘
+    ctx.fillStyle = world.far;
+    hills.forEach(h => { ctx.beginPath(); ctx.ellipse(h.x + h.w/2, GROUND + 4, h.w/2, h.h, 0, Math.PI, 0); ctx.fill(); });
+    ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
+    hills.forEach(h => { ctx.beginPath(); ctx.ellipse(h.x + h.w/2, GROUND + 4, h.w/2, h.h, 0, Math.PI, 0); ctx.stroke(); });
+
+    // 地面
+    ctx.fillStyle = world.ground; ctx.fillRect(-20, GROUND, W+40, H-GROUND+20);
+    ctx.fillStyle = '#1B1B1F'; ctx.fillRect(-20, GROUND, W+40, 4);
+    // 地面のストライプ（流れる）
+    const off = (S.dist*33) % 60;
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    for (let x = off - 120; x < W + 60; x += 60){ ctx.fillRect(x, GROUND + 18, 28, 6); ctx.fillRect(x + 36, GROUND + 34, 12, 5); }
+
+    obstacles.forEach(o => o.type==='bird' ? drawBird(o) : drawCactus(o, world));
+    drawDino();
+
+    // パーティクル
+    particles.forEach(p => { ctx.globalAlpha = Math.min(1, p.life/20); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+
+    // 100点フラッシュ
+    flashes.forEach(f => {
+      const a = Math.min(1, f.life/25), sc = 1 + (1 - Math.min(1, (70 - f.life)/10))*.6;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(W*.5, 92); ctx.scale(sc, sc);
+      ctx.font = '900 34px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 8; ctx.strokeStyle = '#1B1B1F'; ctx.strokeText(f.text, 0, 0);
+      ctx.fillStyle = '#FFE000'; ctx.fillText(f.text, 0, 0);
+      ctx.restore();
+    });
+
+    // キャンバス内スコア（小さく）
+    ctx.font = '900 16px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.lineWidth = 4; ctx.strokeStyle = '#1B1B1F'; ctx.fillStyle = '#fff';
+    const st = String(S.score).padStart(5, '0');
+    ctx.strokeText(st, 14, 10); ctx.fillText(st, 14, 10);
+    ctx.restore();
+  }
+
+  // ================= ループ =================
+  // 固定タイムステップ（1/60秒単位）。遅いフレームは最大4サブステップで追いつく
+  let acc = 0;
+  function step(n){ for (let i=0;i<n;i++) update(1); }
+  function loop(ts){
+    if (lastFrame) acc += Math.min(4, (ts - lastFrame) / (1000/60));
+    lastFrame = ts;
+    while (acc >= 1){ update(1); acc -= 1; }
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+  // テスト用フック
+  window.DRRUN = { S, dino, step, draw, start, jump, get obstacles(){ return obstacles; } };
+
+  // ================= 🚀 シェア =================
+  const shareOverlay = document.getElementById('shareOverlay');
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    document.getElementById('shNative').style.display = navigator.share ? '' : 'none';
+    document.getElementById('shCopyLb').textContent = 'リンクをコピー';
+    shareOverlay.classList.add('open');
+  });
+  shareOverlay.addEventListener('click', e => { if (e.target === shareOverlay) shareOverlay.classList.remove('open'); });
+  document.querySelectorAll('.share-opt').forEach(btn => btn.addEventListener('click', async () => {
+    const url = location.origin + location.pathname;
+    const text = `DINORENNY RUN で ${S.score} 点！ #DinoRenny #ahoyoung`;
+    const kind = btn.dataset.sh;
+    if (kind === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
+    else if (kind === 'line') window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url), '_blank');
+    else if (kind === 'copy'){
+      try{ await navigator.clipboard.writeText(url); document.getElementById('shCopyLb').textContent = 'コピーしました！'; }catch(e){ prompt('URLをコピー', url); }
+      return;
+    }
+    else if (kind === 'native'){ try{ await navigator.share({ title:'DINORENNY RUN', text, url }); }catch(e){} }
+    shareOverlay.classList.remove('open');
+  }));
+})();
+</script>
+</body>
+</html>
