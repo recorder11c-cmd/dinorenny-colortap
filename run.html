@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>DINORENNY RUN | ahoyoung</title>
+<title>DINORENNY RUN | SUE</title>
 <meta name="description" content="DinoRennyの恐竜ランゲーム。タップでジャンプ！サボテンをとび越えて、ハイスコアをねらえ。">
-<meta property="og:title" content="DINORENNY RUN | ahoyoung">
+<meta property="og:title" content="DINORENNY RUN | SUE">
 <meta property="og:description" content="タップでジャンプ！カラフル恐竜ランゲーム">
-<meta property="og:image" content="art/ahoyoung.png">
+<meta property="og:image" content="art/sue_pixel.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
@@ -157,7 +157,7 @@
     <span><kbd>↓</kbd> / 下スワイプ / ボタン長押し しゃがむ</span>
     <span>100点ごとに世界の色がかわる</span>
   </div>
-  <footer id="credit">© DinoRenny / character by ahoyoung</footer>
+  <footer id="credit">© DinoRenny</footer>
 </div>
 
 <div class="share-overlay" id="shareOverlay">
@@ -177,7 +177,9 @@
   // ================= キャラ設定（差し替えはここだけ） =================
   // sprite : 正方形・背景透過PNG（体が左向きのもの。右向きの絵なら flip:true）
   // name   : シェア文・OGに使う名前 / credit : フッターのクレジット
-  const CHAR = { name:'ahoyoung', sprite:'art/ahoyoung.png', flip:false, credit:'character by ahoyoung' };
+  const CHAR  = { name:'SUE', sprite:'art/sue_pixel.png', flip:true, credit:'SUE & PUTTI by DinoRenny' };
+  // 飛んでくる敵（右向きの絵。左向きの絵なら flip:true）
+  const ENEMY = { sprite:'art/putti_pixel.png', flip:false, size:76 };
   // ================= 設定 =================
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
   const SPRITE_SRC = CHAR.sprite;
@@ -225,6 +227,15 @@
     sprite.canvas = c; sprite.w = c.width; sprite.h = c.height; sprite.ready = true;
   };
   im.src = SPRITE_SRC;
+  const enemy = { canvas:null, ready:false };
+  const eim = new Image();
+  eim.onload = () => {
+    const c = document.createElement('canvas'); c.width = eim.naturalWidth; c.height = eim.naturalHeight;
+    const g = c.getContext('2d');
+    if (ENEMY.flip){ g.translate(c.width, 0); g.scale(-1, 1); }
+    g.drawImage(eim, 0, 0); enemy.canvas = c; enemy.ready = true;
+  };
+  eim.src = ENEMY.sprite;
 
   // ================= 音（WebAudio・小さなビープ） =================
   let ac = null;
@@ -321,7 +332,7 @@
     const canBird = S.score >= 250 && Math.random() < .3;
     if (canBird){
       const lanes = [GROUND - 22, GROUND - 78, GROUND - 130];
-      obstacles.push({ type:'bird', x:-100, y:lanes[Math.floor(Math.random()*lanes.length)], w:52, h:34, flap:0 });
+      obstacles.push({ type:'bird', x:-120, y:lanes[Math.floor(Math.random()*lanes.length)], w:64, h:50, flap:Math.random()*6 });
     } else {
       const big = Math.random() < .4;
       const n = Math.random() < .55 ? 1 : (Math.random() < .6 || big ? 2 : 3);   // 大サボテンは最大2連
@@ -393,7 +404,7 @@
 
     const db = dinoBox();
     for (const o of obstacles){
-      const ob = o.type==='bird' ? { x:o.x+8, y:o.y-o.h+6, w:o.w-16, h:o.h-12 } : { x:o.x+5, y:o.y-o.h+10, w:o.w-10, h:o.h-10 };
+      const ob = o.type==='bird' ? { x:o.x+10, y:o.y-o.h+8, w:o.w-20, h:o.h-14 } : { x:o.x+5, y:o.y-o.h+10, w:o.w-10, h:o.h-10 };
       if (hit(db, ob)){ gameOver(); break; }
     }
   }
@@ -421,19 +432,16 @@
     }
   }
   function drawBird(o){
-    const f = Math.sin(o.flap) ;
-    ctx.save(); ctx.translate(o.x, o.y - o.h);
-    ctx.fillStyle = '#6C4BFF'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
-    // 体
-    rr(6, 12, 40, 18, 9); ctx.fill(); ctx.stroke();
-    // 羽
-    ctx.fillStyle = '#FFE000';
-    ctx.beginPath(); ctx.moveTo(22, 18); ctx.lineTo(8, 18 - 18*f); ctx.lineTo(34, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // くちばし
-    ctx.fillStyle = '#FF7A00'; ctx.beginPath(); ctx.moveTo(44, 18); ctx.lineTo(58, 22); ctx.lineTo(44, 26); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // 目
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(36, 19, 4, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#1B1B1F'; ctx.beginPath(); ctx.arc(37, 19, 1.8, 0, 7); ctx.fill();
+    // PUTTI：羽ばたき＝上下ゆれ＋わずかな傾き＋縦つぶれ
+    const f = Math.sin(o.flap);
+    const cx = o.x + o.w/2, cy = o.y - o.h/2 + f*5;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(f*.08); ctx.scale(1, 1 - Math.abs(f)*.08);
+    if (enemy.ready){
+      const sz = ENEMY.size; ctx.drawImage(enemy.canvas, -sz/2, -sz/2, sz, sz);
+    } else {
+      ctx.fillStyle = '#FFE000'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
+      rr(-o.w/2, -o.h/2, o.w, o.h, 12); ctx.fill(); ctx.stroke();
+    }
     ctx.restore();
   }
   function drawDino(){
