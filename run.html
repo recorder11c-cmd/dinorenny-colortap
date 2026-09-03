@@ -175,11 +175,14 @@
 <script>
 (() => {
   // ================= キャラ設定（差し替えはここだけ） =================
-  // sprite : 正方形・背景透過PNG（体が左向きのもの。右向きの絵なら flip:true）
-  // name   : シェア文・OGに使う名前 / credit : フッターのクレジット
-  const CHAR  = { name:'SUE', sprite:'art/sue_pixel.png', flip:true, credit:'SUE & PUTTI by DinoRenny' };
-  // 飛んでくる敵（右向きの絵。左向きの絵なら flip:true）
-  const ENEMY = { sprite:'art/putti_pixel.png', flip:false, size:76 };
+  // RUN_DIR : 主人公が走る向き 'right'（左→右。障害物は右から来る）/ 'left'（右→左）
+  // sprite  : 正方形・背景透過PNG / facing : その絵の体の向き（走る向きと違えば自動で反転）
+  // name    : シェア文・OGに使う名前 / credit : フッターのクレジット
+  const RUN_DIR = 'right';
+  const CHAR  = { name:'SUE', sprite:'art/sue_pixel.png', facing:'right', credit:'SUE & PUTTI by DinoRenny' };
+  // 飛んでくる敵（主人公と逆向きに飛ぶ。facing はその絵の向き）
+  const ENEMY = { sprite:'art/putti_pixel.png', facing:'left', size:76 };
+  const DIR = RUN_DIR === 'right' ? 1 : -1;   // 主人公の進行方向。世界は -DIR に流れる
   // ================= 設定 =================
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
   const SPRITE_SRC = CHAR.sprite;
@@ -208,7 +211,7 @@
   // HiDPI
   function fit(){
     W = window.innerWidth < 600 ? 520 : 720;
-    dino.x = W - 200;
+    dino.x = DIR > 0 ? 80 : W - 200;
     cv.style.aspectRatio = W + '/' + H;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = W * dpr; cv.height = H * dpr;
@@ -222,7 +225,7 @@
     const c = document.createElement('canvas');
     c.width = im.naturalWidth; c.height = im.naturalHeight;
     const g = c.getContext('2d');
-    if (CHAR.flip){ g.translate(c.width, 0); g.scale(-1, 1); }   // 右向きの絵は左向きに反転
+    if (CHAR.facing !== RUN_DIR){ g.translate(c.width, 0); g.scale(-1, 1); }   // 走る向きに合わせて反転
     g.drawImage(im, 0, 0);   // 左向きの絵はそのまま（サインが鏡文字にならないよう、世界の方を左→右に流す）
     sprite.canvas = c; sprite.w = c.width; sprite.h = c.height; sprite.ready = true;
   };
@@ -232,7 +235,7 @@
   eim.onload = () => {
     const c = document.createElement('canvas'); c.width = eim.naturalWidth; c.height = eim.naturalHeight;
     const g = c.getContext('2d');
-    if (ENEMY.flip){ g.translate(c.width, 0); g.scale(-1, 1); }
+    if (ENEMY.facing === RUN_DIR){ g.translate(c.width, 0); g.scale(-1, 1); }   // 敵は主人公と逆向き
     g.drawImage(eim, 0, 0); enemy.canvas = c; enemy.ready = true;
   };
   eim.src = ENEMY.sprite;
@@ -253,7 +256,7 @@
 
   // ================= ゲーム状態 =================
   const S = { state:'title', t:0, speed:6, dist:0, score:0, hi:0, worldIdx:0, worldMix:0, shake:0 };
-  const dino = { x:720-200, y:GROUND, vy:0, size:118, duck:false, onGround:true, runT:0, squash:0 };
+  const dino = { x:80, y:GROUND, vy:0, size:118, duck:false, onGround:true, runT:0, squash:0 };
   fit(); window.addEventListener('resize', fit);
   let obstacles = [], clouds = [], particles = [], flashes = [], hills = [];
   let spawnGap = 0, lastFrame = 0;
@@ -332,13 +335,13 @@
     const canBird = S.score >= 250 && Math.random() < .3;
     if (canBird){
       const lanes = [GROUND - 22, GROUND - 78, GROUND - 130];
-      obstacles.push({ type:'bird', x:-120, y:lanes[Math.floor(Math.random()*lanes.length)], w:64, h:50, flap:Math.random()*6 });
+      obstacles.push({ type:'bird', x:DIR > 0 ? W + 40 : -120, y:lanes[Math.floor(Math.random()*lanes.length)], w:64, h:50, flap:Math.random()*6 });
     } else {
       const big = Math.random() < .4;
       const n = Math.random() < .55 ? 1 : (Math.random() < .6 || big ? 2 : 3);   // 大サボテンは最大2連
       const h = big ? 66 + Math.random()*12 : 48 + Math.random()*12;
       const w = big ? 36 : 28;
-      obstacles.push({ type:'cactus', x:-(n*w + (n-1)*4) - 40, y:GROUND, w:n*w + (n-1)*4, h, n, single:w, big });
+      obstacles.push({ type:'cactus', x:DIR > 0 ? W + 40 : -(n*w + (n-1)*4) - 40, y:GROUND, w:n*w + (n-1)*4, h, n, single:w, big });
     }
   }
   function burst(x, y, n, cols){
@@ -360,8 +363,9 @@
   function update(dt){
     S.t += dt;
     // 雲・丘はタイトル中も流す
-    clouds.forEach(c => { c.x += (S.state==='play' ? S.speed : 2) * .25 * dt * c.s; if (c.x > W + 80){ c.x = -140; c.y = 30 + Math.random()*90; } });
-    hills.forEach(h => { h.x += (S.state==='play' ? S.speed : 2) * .4 * dt; if (h.x > W + 20) h.x = -h.w - 20; });
+    const flow = -DIR * (S.state==='play' ? S.speed : 2);
+    clouds.forEach(c => { c.x += flow * .25 * dt * c.s; if (c.x > W + 80){ c.x = -140; c.y = 30 + Math.random()*90; } if (c.x < -140){ c.x = W + 80; c.y = 30 + Math.random()*90; } });
+    hills.forEach(h => { h.x += flow * .4 * dt; if (h.x > W + 20) h.x = -h.w - 20; if (h.x + h.w < -20) h.x = W + 20; });
     particles.forEach(p => { p.x += p.vx*dt; p.y += p.vy*dt; p.vy += .25*dt; p.life -= dt; });
     particles = particles.filter(p => p.life > 0);
     flashes.forEach(f => f.life -= dt); flashes = flashes.filter(f => f.life > 0);
@@ -399,8 +403,8 @@
       const base = 75 - Math.min(35, S.speed*2.5);
       spawnGap = base + Math.random()*70;
     }
-    obstacles.forEach(o => { o.x += S.speed * dt; if (o.type==='bird'){ o.x += 1.2*dt; o.flap += dt*.25; } });
-    obstacles = obstacles.filter(o => o.x < W + 10);
+    obstacles.forEach(o => { o.x -= DIR * S.speed * dt; if (o.type==='bird'){ o.x -= DIR * 1.2*dt; o.flap += dt*.25; } });
+    obstacles = obstacles.filter(o => DIR > 0 ? o.x + o.w > -10 : o.x < W + 10);
 
     const db = dinoBox();
     for (const o of obstacles){
@@ -450,7 +454,7 @@
     // 走り：上下バウンド＋傾き、着地でつぶれ、しゃがみで平たく
     const run = S.state==='play' ? Math.abs(Math.sin(dino.runT)) : Math.abs(Math.sin(dino.runT))*.5;
     const bob = dino.onGround ? -run*6 : 0;
-    const rot = dino.onGround ? Math.sin(dino.runT)*.05 : Math.max(-.35, Math.min(.25, -dino.vy*.03));  // 左向き：上昇で鼻先が上がる
+    const rot = dino.onGround ? Math.sin(dino.runT)*.05 : Math.max(-.35, Math.min(.35, -DIR * dino.vy*.03));  // 上昇で鼻先が上がる
     let sx = 1, sy = 1;
     if (dino.squash > 0){ sx = 1 + dino.squash*.18; sy = 1 - dino.squash*.18; }
     if (dino.duck && dino.onGround){ sx = 1.25; sy = .62; }
@@ -483,10 +487,11 @@
 
     // 太陽
     ctx.fillStyle = '#FFE000'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(120, 70, 30, 0, 7); ctx.fill(); ctx.stroke();
+    const sunX = DIR > 0 ? W - 120 : 120;
+    ctx.beginPath(); ctx.arc(sunX, 70, 30, 0, 7); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#1B1B1F';
-    ctx.beginPath(); ctx.arc(110, 66, 3, 0, 7); ctx.arc(130, 66, 3, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.arc(120, 74, 9, .2, Math.PI-.2); ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(sunX-10, 66, 3, 0, 7); ctx.arc(sunX+10, 66, 3, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(sunX, 74, 9, .2, Math.PI-.2); ctx.lineWidth = 2.5; ctx.stroke();
 
     // 雲
     clouds.forEach(c => {
@@ -509,7 +514,7 @@
     // 地面のストライプ（流れる）
     const off = (S.dist*33) % 60;
     ctx.fillStyle = 'rgba(255,255,255,.35)';
-    for (let x = off - 120; x < W + 60; x += 60){ ctx.fillRect(x, GROUND + 18, 28, 6); ctx.fillRect(x + 36, GROUND + 34, 12, 5); }
+    for (let x = (DIR > 0 ? -off : off) - 120; x < W + 60; x += 60){ ctx.fillRect(x, GROUND + 18, 28, 6); ctx.fillRect(x + 36, GROUND + 34, 12, 5); }
 
     obstacles.forEach(o => o.type==='bird' ? drawBird(o) : drawCactus(o, world));
     drawDino();
@@ -529,10 +534,11 @@
     });
 
     // キャンバス内スコア（小さく）
-    ctx.font = '900 16px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.font = '900 16px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = DIR > 0 ? 'right' : 'left'; ctx.textBaseline = 'top';
     ctx.lineWidth = 4; ctx.strokeStyle = '#1B1B1F'; ctx.fillStyle = '#fff';
     const st = String(S.score).padStart(5, '0');
-    ctx.strokeText(st, 14, 10); ctx.fillText(st, 14, 10);
+    const sx0 = DIR > 0 ? W - 14 : 14;
+    ctx.strokeText(st, sx0, 10); ctx.fillText(st, sx0, 10);
     ctx.restore();
   }
 
