@@ -61,6 +61,14 @@
   }
   canvas{display:block;width:100%;aspect-ratio:720/300;cursor:pointer;touch-action:none;background:#FFE0F1;}
 
+  /* スマホ用しゃがみボタン：タッチ端末のみ表示。押している間しゃがむ */
+  .duck-btn{
+    display:none;width:100%;margin-top:14px;min-height:56px;padding:10px 14px;border-radius:999px;
+    background:#fff;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);
+    font-family:inherit;font-weight:900;font-size:16px;color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .duck-btn.on{background:var(--accent-2);color:#fff;transform:translateY(3px);box-shadow:0 1px 0 var(--ink);}
+  @media (hover:none) and (pointer:coarse){ .duck-btn{display:block;} }
   .overlay{
     position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:10px;text-align:center;padding:12px;pointer-events:none;
@@ -142,12 +150,14 @@
     </div>
   </div>
 
+  <button class="duck-btn" id="duckBtn" type="button" aria-label="しゃがむ（長押し）">⬇︎ 長押しで しゃがむ</button>
+
   <div class="help">
     <span>タップ / <kbd>SPACE</kbd> ジャンプ</span>
-    <span><kbd>↓</kbd> しゃがむ</span>
+    <span><kbd>↓</kbd> / 下スワイプ / ボタン長押し しゃがむ</span>
     <span>100点ごとに世界の色がかわる</span>
   </div>
-  <footer>© DinoRenny / character by ahoyoung</footer>
+  <footer id="credit">© DinoRenny / character by ahoyoung</footer>
 </div>
 
 <div class="share-overlay" id="shareOverlay">
@@ -164,10 +174,15 @@
 
 <script>
 (() => {
+  // ================= キャラ設定（差し替えはここだけ） =================
+  // sprite : 正方形・背景透過PNG（体が左向きのもの。右向きの絵なら flip:true）
+  // name   : シェア文・OGに使う名前 / credit : フッターのクレジット
+  const CHAR = { name:'ahoyoung', sprite:'art/ahoyoung.png', flip:false, credit:'character by ahoyoung' };
   // ================= 設定 =================
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
-  const SPRITE_SRC = 'art/ahoyoung.png';
-  const HI_KEY = 'dr_run_hi';
+  const SPRITE_SRC = CHAR.sprite;
+  const HI_KEY = 'dr_run_hi_' + CHAR.name;
+  const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© DinoRenny / ' + CHAR.credit;
   // 100点ごとに切り替わる世界の色（DinoRennyパレット）
   const WORLDS = [
     { sky:['#FFE0F1','#FF9BD3'], ground:'#FF3EA5', far:'#FFB3DE', cactus:'#00D4FF', cactus2:'#7FE000', page:'#FF3EA5', name:'NEON PINK' },
@@ -205,7 +220,8 @@
     const c = document.createElement('canvas');
     c.width = im.naturalWidth; c.height = im.naturalHeight;
     const g = c.getContext('2d');
-    g.drawImage(im, 0, 0);   // 左向きのまま（しっぽのサインが鏡文字にならないよう、世界の方を左→右に流す）
+    if (CHAR.flip){ g.translate(c.width, 0); g.scale(-1, 1); }   // 右向きの絵は左向きに反転
+    g.drawImage(im, 0, 0);   // 左向きの絵はそのまま（サインが鏡文字にならないよう、世界の方を左→右に流す）
     sprite.canvas = c; sprite.w = c.width; sprite.h = c.height; sprite.ready = true;
   };
   im.src = SPRITE_SRC;
@@ -272,12 +288,13 @@
   function setPageColor(c){ document.body.style.backgroundColor = c; }
 
   // ================= 入力 =================
+  let swipeY = null;
   function pressAction(){
     if (S.state === 'title') start();
     else if (S.state === 'play') jump();
     else if (S.state === 'over' && !overOv.classList.contains('hide')) start();
   }
-  cv.addEventListener('pointerdown', e => { e.preventDefault(); pressAction(); });
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); swipeY = e.clientY; pressAction(); });
   document.getElementById('startBtn').addEventListener('click', start);
   document.getElementById('retryBtn').addEventListener('click', start);
   window.addEventListener('keydown', e => {
@@ -285,6 +302,19 @@
     if (e.code === 'ArrowDown'){ e.preventDefault(); if (S.state==='play'){ dino.duck = true; if(!dino.onGround) dino.vy += 2.5; } }
   });
   window.addEventListener('keyup', e => { if (e.code === 'ArrowDown') dino.duck = false; });
+  // スマホ：しゃがみボタンを押している間しゃがむ（空中なら急降下）
+  const duckBtn = document.getElementById('duckBtn');
+  const duckOn  = e => { e.preventDefault(); e.stopPropagation(); if (S.state!=='play') return; dino.duck = true; if(!dino.onGround) dino.vy += 2.5; duckBtn.classList.add('on'); };
+  const duckOff = e => { dino.duck = false; duckBtn.classList.remove('on'); };
+  duckBtn.addEventListener('pointerdown', duckOn);
+  duckBtn.addEventListener('pointerup', duckOff);
+  duckBtn.addEventListener('pointercancel', duckOff);
+  duckBtn.addEventListener('pointerleave', duckOff);
+  duckBtn.addEventListener('contextmenu', e => e.preventDefault());
+  // キャンバス上で下スワイプしても、しゃがみ/急降下（指を離すまで）
+  cv.addEventListener('pointermove', e => { if (swipeY !== null && e.clientY - swipeY > 28 && S.state==='play'){ if(!dino.duck && !dino.onGround) dino.vy += 2.5; dino.duck = true; } });
+  const swipeEnd = () => { swipeY = null; if (!duckBtn.classList.contains('on')) dino.duck = false; };
+  cv.addEventListener('pointerup', swipeEnd); cv.addEventListener('pointercancel', swipeEnd);
 
   // ================= 生成 =================
   function spawnObstacle(){
@@ -523,7 +553,7 @@
   shareOverlay.addEventListener('click', e => { if (e.target === shareOverlay) shareOverlay.classList.remove('open'); });
   document.querySelectorAll('.share-opt').forEach(btn => btn.addEventListener('click', async () => {
     const url = location.origin + location.pathname;
-    const text = `DINORENNY RUN で ${S.score} 点！ #DinoRenny #ahoyoung`;
+    const text = `DINORENNY RUN で ${S.score} 点！ #DinoRenny #${CHAR.name}`;
     const kind = btn.dataset.sh;
     if (kind === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
     else if (kind === 'line') window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url), '_blank');
