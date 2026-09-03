@@ -108,6 +108,31 @@
   footer{margin-top:18px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-shadow:1px 1px 0 var(--ink);}
   footer a{color:#fff;}
 
+  /* ランキング */
+  .rank-box{display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto;}
+  .rank-form{display:flex;gap:6px;align-items:center;}
+  .rank-form input{
+    width:min(46vw,170px);min-height:var(--tap-min);padding:6px 12px;border:3px solid var(--ink);border-radius:999px;
+    font-family:inherit;font-weight:900;font-size:15px;background:#fff;color:var(--ink);
+  }
+  .rank-msg{font-weight:900;font-size:clamp(12px,3.6vw,15px);background:#fff;border:3px solid var(--ink);border-radius:999px;padding:3px 14px;box-shadow:3px 3px 0 var(--ink);}
+  .rank-msg b{color:var(--accent-2);}
+  .btn.sm{padding:8px 16px;font-size:14px;}
+  .rank-menu{background:#fff;border-radius:22px 22px 0 0;padding:18px 18px 28px;width:min(480px,100%);max-height:85vh;overflow:auto;}
+  @media(min-width:600px){ .rank-menu{border-radius:22px;border:3px solid var(--ink);} }
+  .rank-list{list-style:none;display:flex;flex-direction:column;gap:4px;margin:10px 0;}
+  .rank-list li{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:8px;padding:6px 10px;border-radius:12px;font-weight:900;font-size:15px;}
+  .rank-list li.me{background:#FFF3B0;border:2px solid var(--ink);}
+  .rank-list li:nth-child(1) .rk{color:#D4A200;} .rank-list li:nth-child(2) .rk{color:#8A8A8A;} .rank-list li:nth-child(3) .rk{color:#B4632B;}
+  .rank-list .rk{font-size:14px;} .rank-list .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .rank-list .sc{color:var(--accent-2);}
+  .rank-foot{text-align:center;font-size:12px;font-weight:800;color:var(--ink-soft);}
+  .over-panel{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:14px;}
+  .over-panel[hidden],.rank-form[hidden],.rank-box[hidden],.btn[hidden],.rank-msg[hidden]{display:none;}
+  .gameover{gap:6px;}
+  .gameover .result{padding:4px 18px;}
+  .gameover .result .big{font-size:clamp(24px,7vw,40px);}
+  .gameover .ttl{font-size:clamp(18px,5.5vw,34px);}
   .share-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:700;display:none;align-items:flex-end;justify-content:center;}
   .share-overlay.open{display:flex;}
   .share-menu{background:#fff;border-radius:22px 22px 0 0;padding:20px 22px 30px;width:min(480px,100%);}
@@ -138,15 +163,29 @@
       <div class="ttl">DINORENNY <span>RUN</span></div>
       <div class="sub">タップ / スペースで スタート！</div>
       <button class="btn main" id="startBtn" type="button">▶ はしる！</button>
+      <button class="btn sm" id="rankBtnTitle" type="button">🏆 ランキング</button>
     </div>
 
     <div class="overlay gameover hide" id="overOv">
       <div class="ttl">GAME OVER</div>
       <div class="result num">SCORE<span class="big" id="finalScore">0</span><span id="newHi" class="new" hidden>NEW RECORD!</span></div>
-      <div class="row">
-        <button class="btn main" id="retryBtn" type="button">↻ もう一回</button>
-        <button class="btn" id="shareBtn" type="button">🚀 シェア</button>
+      <div class="sub">タップでもう一回</div>
+    </div>
+  </div>
+
+  <!-- ゲームオーバー後の操作パネル（キャンバスの外に出してスマホでもはみ出さない） -->
+  <div class="over-panel" id="overPanel" hidden>
+    <div class="rank-box" id="rankBox">
+      <div class="rank-form" id="rankForm">
+        <input id="rankName" type="text" maxlength="12" placeholder="ニックネーム" autocomplete="nickname" enterkeyhint="done">
+        <button class="btn sm" id="rankSubmit" type="button">🏆 登録</button>
       </div>
+      <div class="rank-msg num" id="rankMsg" hidden></div>
+    </div>
+    <div class="row">
+      <button class="btn main" id="retryBtn" type="button">↻ もう一回</button>
+      <button class="btn" id="shareBtn" type="button">🚀 シェア</button>
+      <button class="btn" id="rankBtnOver" type="button">🏆 順位表</button>
     </div>
   </div>
 
@@ -160,6 +199,13 @@
   <footer id="credit">© DinoRenny</footer>
 </div>
 
+<div class="share-overlay" id="rankOverlay">
+  <div class="rank-menu">
+    <div class="share-title">🏆 RANKING <span id="rankChar"></span></div>
+    <ol class="rank-list" id="rankList"><li><span class="rk">…</span><span class="nm">読み込み中</span><span></span></li></ol>
+    <div class="rank-foot" id="rankFoot"></div>
+  </div>
+</div>
 <div class="share-overlay" id="shareOverlay">
   <div class="share-menu">
     <div class="share-title">シェアする</div>
@@ -187,6 +233,8 @@
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
   const SPRITE_SRC = CHAR.sprite;
   const HI_KEY = 'dr_run_hi_' + CHAR.name;
+  // ランキングAPI(CHARAMARLのVercel/Upstash Redis)。空文字にするとランキング機能ごと非表示
+  const RANK_API = 'https://charamarl.com/api/run-score';
   const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© DinoRenny / ' + CHAR.credit;
   // 100点ごとに切り替わる世界の色（DinoRennyパレット）
   const WORLDS = [
@@ -276,7 +324,7 @@
     S.state = 'play'; S.t = 0; S.speed = 6; S.dist = 0; S.score = 0; S.worldIdx = 0; S.worldMix = 0; S.shake = 0;
     dino.y = GROUND; dino.vy = 0; dino.duck = false; dino.onGround = true; dino.squash = 0;
     resetWorld();
-    startOv.classList.add('hide'); overOv.classList.add('hide');
+    startOv.classList.add('hide'); overOv.classList.add('hide'); document.getElementById('overPanel').hidden = true;
     setPageColor(WORLDS[0].page);
     beep(660, .12, 'square', .06, 300);
   }
@@ -289,7 +337,8 @@
     const isNew = S.score > S.hi;
     if (isNew){ S.hi = S.score; try{ localStorage.setItem(HI_KEY, S.hi); }catch(e){} scoreHiEl.textContent = S.hi; }
     newHiEl.hidden = !isNew;
-    setTimeout(() => overOv.classList.remove('hide'), 350);
+    setTimeout(() => { overOv.classList.remove('hide'); document.getElementById('overPanel').hidden = false; }, 350);
+    onGameOverRank(S.score, isNew);
   }
   function jump(){
     if (S.state !== 'play') return;
@@ -557,6 +606,65 @@
   // テスト用フック
   window.DRRUN = { S, dino, step, draw, start, jump, get obstacles(){ return obstacles; } };
 
+  // ================= 🏆 ランキング =================
+  const NAME_KEY = 'dr_run_name', PID_KEY = 'dr_run_pid';
+  let pid = '', savedName = '';
+  try {
+    pid = localStorage.getItem(PID_KEY) || '';
+    if (!/^[a-f0-9]{16,32}$/.test(pid)){ pid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(PID_KEY, pid); }
+    savedName = localStorage.getItem(NAME_KEY) || '';
+  } catch(e){}
+  const rankBox = document.getElementById('rankBox'), rankForm = document.getElementById('rankForm');
+  const rankName = document.getElementById('rankName'), rankMsg = document.getElementById('rankMsg');
+  const rankOverlay = document.getElementById('rankOverlay'), rankList = document.getElementById('rankList'), rankFoot = document.getElementById('rankFoot');
+  document.getElementById('rankChar').textContent = CHAR.name;
+  rankName.value = savedName;
+  if (!RANK_API){ rankBox.hidden = true; document.getElementById('rankBtnTitle').hidden = true; document.getElementById('rankBtnOver').hidden = true; }
+
+  function showMsg(html){ rankMsg.innerHTML = html; rankMsg.hidden = false; }
+  async function submitScore(score){
+    const name = rankName.value.trim().slice(0, 12);
+    if (!name){ rankName.focus(); return; }
+    if (name !== savedName){ savedName = name; try{ localStorage.setItem(NAME_KEY, name); }catch(e){} }
+    showMsg('登録中…'); rankForm.hidden = true;
+    try{
+      const r = await fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ char: CHAR.name, pid, name, score }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.status);
+      showMsg(`${esc(name)} さん：<b>${d.rank}位</b> / ${d.total}人中（ベスト ${d.best}）`);
+      renderBoard(d.top, d.total, { rank: d.rank, best: d.best });
+    }catch(e){ showMsg('登録できませんでした'); rankForm.hidden = false; }
+  }
+  function onGameOverRank(score, isNew){
+    if (!RANK_API){ rankBox.hidden = true; return; }
+    rankBox.hidden = false; rankMsg.hidden = true; rankForm.hidden = false;
+    if (score < 1){ rankBox.hidden = true; return; }
+    if (savedName && isNew) submitScore(score);                       // 名前登録済みならベスト更新時に自動登録
+    else if (savedName){ rankForm.hidden = true; showMsg('ベスト更新でランキングに登録されます'); }
+  }
+  document.getElementById('rankSubmit').addEventListener('click', () => submitScore(S.score));
+  rankName.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter'){ e.preventDefault(); submitScore(S.score); } });   // 入力中のSPACEでジャンプしない
+  rankName.addEventListener('keyup', e => e.stopPropagation());
+
+  function renderBoard(top, total, me){
+    rankList.innerHTML = (top && top.length) ? top.map(t => `<li${t.me ? ' class="me"' : ''}><span class="rk num">${t.rank <= 3 ? ['🥇','🥈','🥉'][t.rank-1] : t.rank + '位'}</span><span class="nm">${esc(t.name)}</span><span class="sc num">${t.score}</span></li>`).join('')
+      : '<li><span class="rk">—</span><span class="nm">まだ登録がありません</span><span></span></li>';
+    rankFoot.textContent = (me && me.rank ? `あなた：${me.rank}位（ベスト ${me.best}）｜` : '') + `登録 ${total || 0}人`;
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  async function openBoard(){
+    rankOverlay.classList.add('open');
+    try{
+      const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.name)}&pid=${pid}`);
+      const d = await r.json();
+      renderBoard(d.top, d.total, d.me);
+    }catch(e){ rankList.innerHTML = '<li><span class="rk">!</span><span class="nm">読み込めませんでした</span><span></span></li>'; rankFoot.textContent = ''; }
+  }
+  document.getElementById('rankBtnTitle').addEventListener('click', openBoard);
+  document.getElementById('rankBtnOver').addEventListener('click', openBoard);
+  rankOverlay.addEventListener('click', e => { if (e.target === rankOverlay) rankOverlay.classList.remove('open'); });
+  window.addEventListener('keydown', e => { if (e.code === 'Space' && rankOverlay.classList.contains('open')) e.stopImmediatePropagation(); }, true);
+
   // ================= 🚀 シェア =================
   const shareOverlay = document.getElementById('shareOverlay');
   document.getElementById('shareBtn').addEventListener('click', () => {
@@ -567,7 +675,8 @@
   shareOverlay.addEventListener('click', e => { if (e.target === shareOverlay) shareOverlay.classList.remove('open'); });
   document.querySelectorAll('.share-opt').forEach(btn => btn.addEventListener('click', async () => {
     const url = location.origin + location.pathname;
-    const text = `DINORENNY RUN で ${S.score} 点！ #DinoRenny #${CHAR.name}`;
+    const m = rankMsg.hidden ? null : rankMsg.textContent.match(/(\d+)位/);
+    const text = `DINORENNY RUN で ${S.score} 点${m ? `（${m[1]}位）` : ''}！ #DinoRenny #${CHAR.name}`;
     const kind = btn.dataset.sh;
     if (kind === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
     else if (kind === 'line') window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url), '_blank');
