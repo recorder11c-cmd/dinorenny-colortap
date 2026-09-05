@@ -189,6 +189,7 @@
         <button class="btn sm" id="rankSubmit" type="button">🏆 登録</button>
       </div>
       <div class="rank-msg num" id="rankMsg" hidden></div>
+      <button class="btn sm" id="rankRename" type="button" hidden>✎ 名前を変える</button>
     </div>
     <div class="row">
       <button class="btn main" id="retryBtn" type="button">↻ もう一回</button>
@@ -630,7 +631,9 @@
   rankName.value = savedName;
   if (!RANK_API){ rankBox.hidden = true; document.getElementById('rankBtnTitle').hidden = true; document.getElementById('rankBtnOver').hidden = true; }
 
-  function showMsg(html){ rankMsg.innerHTML = html; rankMsg.hidden = false; }
+  const rankRename = document.getElementById('rankRename');
+  function showMsg(html){ rankMsg.innerHTML = html; rankMsg.hidden = false; rankRename.hidden = !savedName || !rankForm.hidden; }
+  rankRename.addEventListener('click', () => { rankForm.hidden = false; rankRename.hidden = true; rankName.value = savedName; rankName.focus(); rankName.select(); });
   async function submitScore(score){
     const name = rankName.value.trim().slice(0, 12);
     if (!name){ rankName.focus(); return; }
