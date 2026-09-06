@@ -62,6 +62,10 @@
     font-weight:900;font-size:clamp(12px,3.4vw,15px);box-shadow:3px 3px 0 var(--ink);white-space:nowrap;
   }
   .chip b{color:var(--accent-2);}
+  .chip.owner{background:linear-gradient(135deg,#FFE27A,#E0A800);}
+  .chip[hidden]{display:none;}
+  .sponsor{pointer-events:auto;font-size:11px;font-weight:900;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 10px;text-decoration:none;position:absolute;right:10px;bottom:8px;}
+  .sponsor[hidden]{display:none;}
 
   .card{
     position:relative;background:var(--surface);border:3px solid var(--ink);border-radius:var(--radius);
@@ -161,6 +165,7 @@
     <div class="scores">
       <div class="chip num">SCORE <b id="scoreNow">0</b></div>
       <div class="chip num">HI <b id="scoreHi">0</b></div>
+      <div class="chip owner" id="ownerChip" hidden>★ OWNER</div>
     </div>
   </header>
 
@@ -172,6 +177,7 @@
       <div class="sub">タップ / スペースで スタート！</div>
       <button class="btn main" id="startBtn" type="button">▶ はしる！</button>
       <button class="btn sm" id="rankBtnTitle" type="button">🏆 ランキング</button>
+      <a class="sponsor" id="sponsor" target="_blank" rel="noopener" hidden></a>
     </div>
 
     <div class="overlay gameover hide" id="overOv">
@@ -235,17 +241,45 @@
   // 例) 別キャラにするとき: { name:'XXX', sprite:'art/xxx.png', facing:'right', credit:'XXX by ...' }
   // name    : シェア文・OGに使う名前 / credit : フッターのクレジット
   const RUN_DIR = 'right';
-  const CHAR  = { name:'SUE', sprite:'art/sue_pixel.png', facing:'right', credit:'SUE & PUTTI by DinoRenny' };
-  // 飛んでくる敵（主人公と逆向きに飛ぶ。facing はその絵の向き）
-  const ENEMY = { sprite:'art/putti_pixel.png', facing:'left', size:76 };
+  // キャラ一覧: ?char=xxx で切り替え（作家キャラ版はここに追加＋CHARAMARLのrun-score APIの許可リストにも追加）
+  //   shop    : ホームボタンのリンク先（アクキー販売ページ）
+  //   sponsor : スポンサー枠（任意）{ name, url } → タイトル画面に「presented by」を表示
+  const CHARS = {
+    sue: {
+      name:'SUE', sprite:'art/sue_pixel.png', facing:'right', credit:'SUE & PUTTI by DinoRenny',
+      enemy:{ sprite:'art/putti_pixel.png', facing:'left', size:76 },
+      shop:'https://charamarl.com/tap/sue.html?utm_source=dinorenny_run',
+      sponsor:null,
+    },
+  };
+  const charKey = (new URLSearchParams(location.search).get('char') || 'sue').toLowerCase();
+  const CHAR  = CHARS[charKey] || CHARS.sue;
+  const ENEMY = CHAR.enemy;
   const DIR = RUN_DIR === 'right' ? 1 : -1;   // 主人公の進行方向。世界は -DIR に流れる
+  // NFCアクキー所有者特典: ?owner=<token> をAPIで検証 → 端末に記憶 → 金のオーラ＋GOLD WORLDから開始
+  const OWNER_KEY = 'dr_run_owner_' + CHAR.name;
+  let isOwner = false; try { isOwner = localStorage.getItem(OWNER_KEY) === '1'; } catch(e){}
   // ================= 設定 =================
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
   const SPRITE_SRC = CHAR.sprite;
   const HI_KEY = 'dr_run_hi_' + CHAR.name;
   // ランキングAPI(CHARAMARLのVercel/Upstash Redis)。空文字にするとランキング機能ごと非表示
   const RANK_API = 'https://charamarl.com/api/run-score';
+  (async () => {
+    const tok = new URLSearchParams(location.search).get('owner');
+    if (tok && RANK_API){
+      try{
+        const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.name)}&owner=${encodeURIComponent(tok)}`);
+        const d = await r.json();
+        if (d && d.owner){ isOwner = true; try{ localStorage.setItem(OWNER_KEY, '1'); }catch(e){} }
+      }catch(e){}
+    }
+    if (isOwner){ document.getElementById('ownerChip').hidden = false; }
+  })();
   const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© DinoRenny / ' + CHAR.credit;
+  const logoEl = document.querySelector('.logo'); if (logoEl && CHAR.shop) logoEl.href = CHAR.shop;
+  document.title = 'DINORENNY RUN' + (charKey !== 'sue' ? ' | ' + CHAR.name : '');
+  if (CHAR.sponsor){ const sp = document.getElementById('sponsor'); sp.hidden = false; sp.href = CHAR.sponsor.url || '#'; sp.textContent = 'presented by ' + CHAR.sponsor.name; }
   // 100点ごとに切り替わる世界の色（DinoRennyパレット）
   const WORLDS = [
     { sky:['#FFE0F1','#FF9BD3'], ground:'#FF3EA5', far:'#FFB3DE', cactus:'#00D4FF', cactus2:'#7FE000', page:'#FF3EA5', name:'NEON PINK' },
@@ -255,6 +289,8 @@
     { sky:['#FFE7CC','#FFB066'], ground:'#FF7A00', far:'#FFCF9E', cactus:'#00D4FF', cactus2:'#FF3EA5', page:'#FF7A00', name:'BLAZE ORANGE' },
     { sky:['#E4E0FF','#9C8CFF'], ground:'#6C4BFF', far:'#C6BDFF', cactus:'#FFE000', cactus2:'#00D4FF', page:'#6C4BFF', name:'GALAXY PURPLE' },
   ];
+  const GOLD = { sky:['#FFF6D5','#FFD65C'], ground:'#E0A800', far:'#FFE9A0', cactus:'#1B1B1F', cactus2:'#FF3EA5', page:'#E0A800', name:'GOLD OWNER' };
+  const worldAt = i => (isOwner && i === 0) ? GOLD : WORLDS[i];   // 所有者は最初の100点がGOLD WORLD
 
   // ================= DOM =================
   const cv = document.getElementById('game');
@@ -335,7 +371,7 @@
     dino.y = GROUND; dino.vy = 0; dino.duck = false; dino.onGround = true; dino.squash = 0;
     resetWorld();
     startOv.classList.add('hide'); overOv.classList.add('hide'); document.getElementById('overPanel').hidden = true;
-    setPageColor(WORLDS[0].page);
+    setPageColor(worldAt(0).page);
     beep(660, .12, 'square', .06, 300);
   }
   function gameOver(){
@@ -448,8 +484,8 @@
     if (S.score !== prev) scoreNowEl.textContent = S.score;
     if (Math.floor(S.score/100) !== Math.floor(prev/100) && S.score > 0){
       S.worldIdx = Math.floor(S.score/100) % WORLDS.length;
-      setPageColor(WORLDS[S.worldIdx].page);
-      flashes.push({ text: WORLDS[S.worldIdx].name, life: 70 });
+      setPageColor(worldAt(S.worldIdx).page);
+      flashes.push({ text: worldAt(S.worldIdx).name, life: 70 });
       beep(880, .1, 'square', .05); setTimeout(()=>beep(1320,.16,'square',.05), 90);
       burst(W*.5, 90, 40, ['#FF3EA5','#00D4FF','#FFE000','#7FE000','#FF7A00','#fff']);
     }
@@ -527,15 +563,17 @@
     ctx.restore(); ctx.save();
     ctx.translate(dino.x + s*.5, dino.y + bob);
     ctx.rotate(rot); ctx.scale(sx, sy);
+    if (isOwner){ ctx.shadowColor = 'rgba(255,200,0,.95)'; ctx.shadowBlur = 22; }
     if (sprite.ready){
       ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s);
+      if (isOwner){ ctx.shadowBlur = 0; ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s); }
     } else {
       ctx.fillStyle = '#1B1B1F'; rr(-s*.3, -s*.8, s*.6, s*.8, 14); ctx.fill();
     }
     ctx.restore();
   }
   function draw(){
-    const world = WORLDS[S.worldIdx];
+    const world = worldAt(S.worldIdx);
     ctx.save();
     if (S.shake > 0) ctx.translate((Math.random()-.5)*S.shake, (Math.random()-.5)*S.shake);
 
