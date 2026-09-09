@@ -281,8 +281,9 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   function beacon(event, extra){
     if (!RANK_API || window.DR_INTERNAL) return;
     try{ const body = JSON.stringify(Object.assign({ char: CHAR.name, event }, extra || {}));
-      if (navigator.sendBeacon) navigator.sendBeacon(RANK_API, new Blob([body], { type:'application/json' }));
-      else fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body, keepalive:true }); }catch(e){}
+      // text/plain で送る(JSON型だとChromeがクロスオリジンのsendBeaconを拒否する)。サーバー側で文字列を解釈
+      if (!(navigator.sendBeacon && navigator.sendBeacon(RANK_API, body)))
+        fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'text/plain' }, body, keepalive:true }).catch(()=>{}); }catch(e){}
   }
   (async () => {
     const tok = new URLSearchParams(location.search).get('owner');
