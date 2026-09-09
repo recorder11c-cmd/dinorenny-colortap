@@ -16,6 +16,18 @@
 <meta name="twitter:title" content="DINORENNY RUN">
 <meta name="twitter:description" content="タップでジャンプ！100点ごとに世界の色がかわるカラフル恐竜ランゲーム">
 <meta name="twitter:image" content="https://dinorenny-colortap.vercel.app/art/og_run.png">
+<script>
+// 計測(GA4・CHARAMARLと同じプロパティ)。?internal=1 を一度開いた端末は以後計測しない(解除=?internal=0)
+(function(){
+  try{ var q=new URLSearchParams(location.search);
+    if(q.get('internal')==='1') localStorage.setItem('cm_internal','1');
+    if(q.get('internal')==='0') localStorage.removeItem('cm_internal');
+    if(localStorage.getItem('cm_internal')==='1'){ window.DR_INTERNAL=true; return; } }catch(e){}
+  var id='G-PMSD6TMSJW', s=document.createElement('script'); s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+id; document.head.appendChild(s);
+  window.dataLayer=window.dataLayer||[]; window.gtag=function(){dataLayer.push(arguments);}; gtag('js',new Date()); gtag('config',id);
+})();
+window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',name,params||{}); }catch(e){} };
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&display=swap" rel="stylesheet">
@@ -265,19 +277,27 @@
   const HI_KEY = 'dr_run_hi_' + CHAR.name;
   // ランキングAPI(CHARAMARLのVercel/Upstash Redis)。空文字にするとランキング機能ごと非表示
   const RANK_API = 'https://charamarl.com/api/run-score';
+  // サーバー側の実数カウント(play/over/share/shop)。内部端末は送らない
+  function beacon(event, extra){
+    if (!RANK_API || window.DR_INTERNAL) return;
+    try{ const body = JSON.stringify(Object.assign({ char: CHAR.name, event }, extra || {}));
+      if (navigator.sendBeacon) navigator.sendBeacon(RANK_API, new Blob([body], { type:'application/json' }));
+      else fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body, keepalive:true }); }catch(e){}
+  }
   (async () => {
     const tok = new URLSearchParams(location.search).get('owner');
     if (tok && RANK_API){
       try{
         const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.name)}&owner=${encodeURIComponent(tok)}`);
         const d = await r.json();
-        if (d && d.owner){ isOwner = true; try{ localStorage.setItem(OWNER_KEY, '1'); }catch(e){} }
+        if (d && d.owner){ isOwner = true; try{ localStorage.setItem(OWNER_KEY, '1'); }catch(e){} drEvent('owner_unlock', { character: CHAR.name }); }
       }catch(e){}
     }
     if (isOwner){ document.getElementById('ownerChip').hidden = false; }
   })();
   const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© DinoRenny / ' + CHAR.credit;
   const logoEl = document.querySelector('.logo'); if (logoEl && CHAR.shop) logoEl.href = CHAR.shop;
+  if (logoEl) logoEl.addEventListener('click', () => { drEvent('shop_click', { character: CHAR.name }); beacon('shop'); });
   document.title = 'DINORENNY RUN' + (charKey !== 'sue' ? ' | ' + CHAR.name : '');
   if (CHAR.sponsor){ const sp = document.getElementById('sponsor'); sp.hidden = false; sp.href = CHAR.sponsor.url || '#'; sp.textContent = 'presented by ' + CHAR.sponsor.name; }
   // 100点ごとに切り替わる世界の色（DinoRennyパレット）
@@ -373,6 +393,7 @@
     startOv.classList.add('hide'); overOv.classList.add('hide'); document.getElementById('overPanel').hidden = true;
     setPageColor(worldAt(0).page);
     beep(660, .12, 'square', .06, 300);
+    drEvent('game_start', { character: CHAR.name, owner: isOwner ? 1 : 0 }); beacon('play');
   }
   function gameOver(){
     S.state = 'over'; S.shake = 14;
@@ -383,6 +404,7 @@
     const isNew = S.score > S.hi;
     if (isNew){ S.hi = S.score; try{ localStorage.setItem(HI_KEY, S.hi); }catch(e){} scoreHiEl.textContent = S.hi; }
     newHiEl.hidden = !isNew;
+    drEvent('game_over', { character: CHAR.name, score: S.score, world: S.worldIdx, new_record: isNew ? 1 : 0 }); beacon('over');
     setTimeout(() => { overOv.classList.remove('hide'); document.getElementById('overPanel').hidden = false; }, 350);
     onGameOverRank(S.score, isNew);
   }
@@ -682,6 +704,7 @@
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || r.status);
       showMsg(`${esc(name)} さん：<b>${d.rank}位</b> / ${d.total}人中（ベスト ${d.best}）`);
+      drEvent('rank_submit', { character: CHAR.name, score, rank: d.rank });
       renderBoard(d.top, d.total, { rank: d.rank, best: d.best });
     }catch(e){ showMsg('登録できませんでした'); rankForm.hidden = false; }
   }
@@ -728,6 +751,7 @@
     const m = rankMsg.hidden ? null : rankMsg.textContent.match(/(\d+)位/);
     const text = `DINORENNY RUN で ${S.score} 点${m ? `（${m[1]}位）` : ''}！ #DinoRenny #${CHAR.name}`;
     const kind = btn.dataset.sh;
+    drEvent('share', { method: kind, score: S.score }); beacon('share');
     if (kind === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
     else if (kind === 'line') window.open('https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url), '_blank');
     else if (kind === 'copy'){
