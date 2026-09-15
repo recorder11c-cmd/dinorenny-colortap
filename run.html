@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>DINORENNY RUN</title>
-<meta name="description" content="DinoRennyの恐竜ランゲーム。タップでジャンプ！サボテンをとび越え、PUTTIをかわして、ハイスコアをねらえ。">
+<title>CHARAMARL RUN</title>
+<meta name="description" content="CHARAMARLのキャラクターで走るランゲーム。タップでジャンプ！仲間のキャラをかわして、ハイスコアをねらえ。">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dinorenny-colortap.vercel.app/run.html">
-<meta property="og:title" content="DINORENNY RUN">
-<meta property="og:description" content="タップでジャンプ！100点ごとに世界の色がかわるカラフル恐竜ランゲーム">
+<meta property="og:title" content="CHARAMARL RUN">
+<meta property="og:description" content="タップでジャンプ！100点ごとに世界の色がかわる、CHARAMARLのキャラで走るランゲーム">
 <meta property="og:image" content="https://dinorenny-colortap.vercel.app/art/og_run.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="DINORENNY RUN">
-<meta name="twitter:description" content="タップでジャンプ！100点ごとに世界の色がかわるカラフル恐竜ランゲーム">
+<meta name="twitter:title" content="CHARAMARL RUN">
+<meta name="twitter:description" content="タップでジャンプ！100点ごとに世界の色がかわる、CHARAMARLのキャラで走るランゲーム">
 <meta name="twitter:image" content="https://dinorenny-colortap.vercel.app/art/og_run.png">
 <script>
 // 計測(GA4・CHARAMARLと同じプロパティ)。?internal=1 を一度開いた端末は以後計測しない(解除=?internal=0)
@@ -76,7 +76,8 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   .chip b{color:var(--accent-2);}
   .chip.owner{background:linear-gradient(135deg,#FFE27A,#E0A800);}
   .chip[hidden]{display:none;}
-  .char-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-weight:900;font-size:12px;color:#fff;text-shadow:1px 1px 0 var(--ink);}
+  .char-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px;font-weight:900;font-size:12px;color:#fff;text-shadow:1px 1px 0 var(--ink);flex-wrap:wrap;}
+  .char-bar > span{white-space:nowrap;}
   .char-bar[hidden]{display:none;}
   .char-select{display:flex;gap:6px;pointer-events:auto;flex-wrap:wrap;justify-content:center;}
   .char-select a{font-weight:900;font-size:12px;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:3px 12px;text-decoration:none;box-shadow:2px 2px 0 var(--ink);}
@@ -186,7 +187,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
 <body>
 <div class="wrap">
   <header>
-    <a class="logo" href="https://charamarl.com/tap/sue.html?utm_source=dinorenny_run" title="SUE COLOR TAP（アクキー販売）へ">DINORENNY<small>RUN</small></a>
+    <a class="logo" href="https://charamarl.com/?utm_source=charamarl_run" title="グッズページへ">CHARAMARL<small>RUN</small></a>
     <div class="scores">
       <div class="chip num">SCORE <b id="scoreNow">0</b></div>
       <div class="chip num">HI <b id="scoreHi">0</b></div>
@@ -195,10 +196,10 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   </header>
 
   <div class="card" id="card">
-    <canvas id="game" width="720" height="300" aria-label="DINORENNY RUN ゲーム画面"></canvas>
+    <canvas id="game" width="720" height="300" aria-label="CHARAMARL RUN ゲーム画面"></canvas>
 
     <div class="overlay" id="startOv">
-      <div class="ttl">DINORENNY <span>RUN</span></div>
+      <div class="ttl">CHARAMARL <span>RUN</span></div>
       <div class="sub">タップ / スペースで スタート！</div>
       <button class="btn main" id="startBtn" type="button">▶ はしる！</button>
       <button class="btn sm" id="rankBtnTitle" type="button">🏆 ランキング</button>
@@ -242,8 +243,9 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     <span>タップ / <kbd>SPACE</kbd> ジャンプ</span>
     <span><kbd>↓</kbd> / 下スワイプ / ボタン長押し しゃがむ</span>
     <span>100点ごとに世界の色がかわる</span>
+    <span>★を取ると30秒 空を飛べる（押して上昇）</span>
   </div>
-  <footer id="credit">© DinoRenny</footer>
+  <footer id="credit">© CHARAMARL</footer>
 </div>
 
 <div class="share-overlay" id="rankOverlay">
@@ -278,46 +280,40 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   // キャラ一覧: ?char=xxx で切り替え（作家キャラ版はここに追加＋CHARAMARLのrun-score APIの許可リストにも追加）
   //   shop    : ホームボタンのリンク先（アクキー販売ページ）
   //   sponsor : スポンサー枠（任意）{ name, url } → タイトル画面に「presented by」を表示
+  //   id      : API・保存キー用(英字)。name : 表示名。artist : クレジット
+  //   敵役は「主人公以外のキャラ」がランダムで飛んでくる(enemySize で大きさ調整)
   const CHARS = {
-    sue: {
-      name:'SUE', sprite:'art/sue_pixel.png', facing:'right', credit:'SUE & PUTTI by DinoRenny',
-      enemy:{ sprite:'art/putti_pixel.png', facing:'left', size:76 },
-      shop:'https://charamarl.com/tap/sue.html?utm_source=dinorenny_run',
-      goods:'https://charamarl.com/img/products_t/sue_red.png',
-      sponsor:null,
-    },
-    putti: {
-      name:'PUTTI', sprite:'art/putti_pixel.png', facing:'left', credit:'PUTTI & SUE by DinoRenny',
-      enemy:{ sprite:'art/sue_pixel.png', facing:'right', size:80 },
-      shop:'https://charamarl.com/characters/putti.html?utm_source=dinorenny_run',
-      goods:'https://charamarl.com/img/products_t/putti_yellow.png',
-      sponsor:null,
-    },
-    mossun: {
-      name:'MOSSUN', sprite:'art/mossun_bust.png?v=2', facing:'left', credit:'MOSSUN & PUTTI by DinoRenny',
-      enemy:{ sprite:'art/putti_pixel.png', facing:'left', size:76 },
-      shop:'https://charamarl.com/characters/mossun.html?utm_source=dinorenny_run',
-      goods:'https://charamarl.com/img/products_t/mossun_blue.png',
-      sponsor:null,
-    },
+    sue:       { id:'SUE',       name:'SUE',           sprite:'art/sue_pixel.png',     facing:'right', artist:'DinoRenny',   enemySize:80,
+                 shop:'https://charamarl.com/tap/sue.html?utm_source=charamarl_run',         goods:'https://charamarl.com/img/products_t/sue_red.png' },
+    gmc:       { id:'GMC',       name:'レコマル',       sprite:'art/run_gmc.png',       facing:'right', artist:'MARU',        enemySize:78,
+                 shop:'https://charamarl.com/characters/gmc.html?utm_source=charamarl_run',  goods:'https://charamarl.com/img/products_t/gmc_red.png' },
+    ufoo:      { id:'UFOO',      name:'う〜ほ〜',       sprite:'art/run_ufoo.png',      facing:'right', artist:'ちゅい',       enemySize:78,
+                 shop:'https://charamarl.com/characters/ufoo.html?utm_source=charamarl_run', goods:'https://charamarl.com/img/products_t/ufoo_white.png' },
+    kagechiyo: { id:'KAGECHIYO', name:'カゲチヨ',       sprite:'art/run_kagechiyo.png', facing:'right', artist:'カゲチヨ',     enemySize:82,
+                 shop:'https://charamarl.com/tap/kagechiyo.html?utm_source=charamarl_run',   goods:'https://charamarl.com/img/products_t/kagechiyo_hoodie_front.png' },
+    yurucrazy: { id:'YURUCRAZY', name:'ユルクレイジー', sprite:'art/run_yurucrazy.png', facing:'left',  artist:'CRAZY',       enemySize:84,
+                 shop:'https://charamarl.com/characters/yurucrazy.html?utm_source=charamarl_run', goods:'https://charamarl.com/img/products_t/yurucrazy.png' },
   };
   const charKey = (new URLSearchParams(location.search).get('char') || 'sue').toLowerCase();
   const CHAR  = CHARS[charKey] || CHARS.sue;
-  const ENEMY = CHAR.enemy;
+  CHAR.credit = `${CHAR.name} by ${CHAR.artist}`;
+  const RIVALS = Object.keys(CHARS).filter(k => CHARS[k] !== CHAR);   // 敵役の候補(主人公以外)
+  // 星の飛行(500点ごとに★が飛来。取ると FLY_SEC 秒間、障害物を無視して空を飛べる)
+  const STAR_EVERY = 500, FLY_SEC = 30;
   const DIR = RUN_DIR === 'right' ? 1 : -1;   // 主人公の進行方向。世界は -DIR に流れる
   // NFCアクキー所有者特典: ?owner=<token> をAPIで検証 → 端末に記憶 → 金のオーラ＋GOLD WORLDから開始
-  const OWNER_KEY = 'dr_run_owner_' + CHAR.name;
+  const OWNER_KEY = 'dr_run_owner_' + CHAR.id;
   let isOwner = false; try { isOwner = localStorage.getItem(OWNER_KEY) === '1'; } catch(e){}
   // ================= 設定 =================
   let W = 720; const H = 300, GROUND = 248;   // スマホでは W を狭めて縦長に
   const SPRITE_SRC = CHAR.sprite;
-  const HI_KEY = 'dr_run_hi_' + CHAR.name;
+  const HI_KEY = 'dr_run_hi_' + CHAR.id;
   // ランキングAPI(CHARAMARLのVercel/Upstash Redis)。空文字にするとランキング機能ごと非表示
   const RANK_API = 'https://charamarl.com/api/run-score';
   // サーバー側の実数カウント(play/over/share/shop)。内部端末は送らない
   function beacon(event, extra){
     if (!RANK_API || window.DR_INTERNAL) return;
-    try{ const body = JSON.stringify(Object.assign({ char: CHAR.name, event }, extra || {}));
+    try{ const body = JSON.stringify(Object.assign({ char: CHAR.id, event }, extra || {}));
       // text/plain で送る(JSON型だとChromeがクロスオリジンのsendBeaconを拒否する)。サーバー側で文字列を解釈
       if (!(navigator.sendBeacon && navigator.sendBeacon(RANK_API, body)))
         fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'text/plain' }, body, keepalive:true }).catch(()=>{}); }catch(e){}
@@ -326,20 +322,20 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     const tok = new URLSearchParams(location.search).get('owner');
     if (tok && RANK_API){
       try{
-        const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.name)}&owner=${encodeURIComponent(tok)}`);
+        const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.id)}&owner=${encodeURIComponent(tok)}`);
         const d = await r.json();
-        if (d && d.owner){ isOwner = true; try{ localStorage.setItem(OWNER_KEY, '1'); }catch(e){} drEvent('owner_unlock', { character: CHAR.name }); }
+        if (d && d.owner){ isOwner = true; try{ localStorage.setItem(OWNER_KEY, '1'); }catch(e){} drEvent('owner_unlock', { character: CHAR.id }); }
       }catch(e){}
     }
     if (isOwner){ document.getElementById('ownerChip').hidden = false; }
   })();
-  const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© DinoRenny / ' + CHAR.credit;
+  const creditEl = document.getElementById('credit'); if (creditEl) creditEl.textContent = '© CHARAMARL / ' + CHAR.credit;
   const logoEl = document.querySelector('.logo'); if (logoEl && CHAR.shop) logoEl.href = CHAR.shop;
-  if (logoEl) logoEl.addEventListener('click', () => { drEvent('shop_click', { character: CHAR.name }); beacon('shop'); });
+  if (logoEl) logoEl.addEventListener('click', () => { drEvent('shop_click', { character: CHAR.id }); beacon('shop'); });
   const perkEl = document.getElementById('perk');
   if (CHAR.goods && CHAR.shop && !isOwner){ perkEl.hidden = false; perkEl.href = CHAR.shop; document.getElementById('perkImg').src = CHAR.goods;
-    perkEl.addEventListener('click', () => { drEvent('perk_click', { character: CHAR.name }); beacon('shop'); }); }
-  document.title = 'DINORENNY RUN' + (charKey !== 'sue' ? ' | ' + CHAR.name : '');
+    perkEl.addEventListener('click', () => { drEvent('perk_click', { character: CHAR.id }); beacon('shop'); }); }
+  document.title = 'CHARAMARL RUN | ' + CHAR.name;
   document.getElementById('charSelect').innerHTML = Object.keys(CHARS).map(k => `<a href="?char=${k}" class="${k === charKey ? 'on' : ''}">${CHARS[k].name}</a>`).join('');
   if (CHAR.sponsor){ const sp = document.getElementById('sponsor'); sp.hidden = false; sp.href = CHAR.sponsor.url || '#'; sp.textContent = 'presented by ' + CHAR.sponsor.name; }
   // 100点ごとに切り替わる世界の色（DinoRennyパレット）
@@ -386,15 +382,25 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     sprite.canvas = c; sprite.w = c.width; sprite.h = c.height; sprite.ready = true;
   };
   im.src = SPRITE_SRC;
-  const enemy = { canvas:null, ready:false };
-  const eim = new Image();
-  eim.onload = () => {
-    const c = document.createElement('canvas'); c.width = eim.naturalWidth; c.height = eim.naturalHeight;
-    const g = c.getContext('2d');
-    if (ENEMY.facing === RUN_DIR){ g.translate(c.width, 0); g.scale(-1, 1); }   // 敵は主人公と逆向き
-    g.drawImage(eim, 0, 0); enemy.canvas = c; enemy.ready = true;
-  };
-  eim.src = ENEMY.sprite;
+  // 敵役(主人公以外の全キャラ)を先読み。主人公と逆向きに揃える
+  const enemies = {};
+  RIVALS.forEach(k => {
+    const ch = CHARS[k], e = { canvas:null, ready:false, size: ch.enemySize || 78 }; enemies[k] = e;
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const g = c.getContext('2d');
+      if (ch.facing === RUN_DIR){ g.translate(c.width, 0); g.scale(-1, 1); }
+      g.drawImage(img, 0, 0); e.canvas = c; e.ready = true;
+    };
+    img.src = ch.sprite;
+  });
+  // ★スター(飛行アイテム)の描画用パス
+  function drawStar(cx, cy, r, rot){
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++){ const a = rot + i * Math.PI / 5 - Math.PI/2, rr2 = i % 2 ? r * .45 : r; ctx.lineTo(cx + Math.cos(a) * rr2, cy + Math.sin(a) * rr2); }
+    ctx.closePath();
+  }
 
   // ================= 音（WebAudio・小さなビープ） =================
   let ac = null;
@@ -411,7 +417,8 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   }
 
   // ================= ゲーム状態 =================
-  const S = { state:'title', t:0, speed:6, dist:0, score:0, hi:0, worldIdx:0, worldMix:0, shake:0 };
+  const S = { state:'title', t:0, speed:6, dist:0, score:0, hi:0, worldIdx:0, worldMix:0, shake:0, fly:0, nextStar:STAR_EVERY, hold:false, grace:0 };
+  let star = null;   // 飛来中の★ {x,y,rot,t}
   const dino = { x:80, y:GROUND, vy:0, size:118, duck:false, onGround:true, runT:0, squash:0 };
   fit(); window.addEventListener('resize', fit);
   let obstacles = [], clouds = [], particles = [], flashes = [], hills = [];
@@ -429,13 +436,13 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   resetWorld();
 
   function start(){
-    S.state = 'play'; S.t = 0; S.speed = 6; S.dist = 0; S.score = 0; S.worldIdx = 0; S.worldMix = 0; S.shake = 0;
+    S.state = 'play'; S.t = 0; S.speed = 6; S.dist = 0; S.score = 0; S.worldIdx = 0; S.worldMix = 0; S.shake = 0; S.fly = 0; S.nextStar = STAR_EVERY; S.hold = false; S.grace = 0; star = null;
     dino.y = GROUND; dino.vy = 0; dino.duck = false; dino.onGround = true; dino.squash = 0;
     resetWorld();
     startOv.classList.add('hide'); overOv.classList.add('hide'); document.getElementById('overPanel').hidden = true; document.getElementById('charBar').hidden = true;
     setPageColor(worldAt(0).page);
     beep(660, .12, 'square', .06, 300);
-    drEvent('game_start', { character: CHAR.name, owner: isOwner ? 1 : 0 }); beacon('play');
+    drEvent('game_start', { character: CHAR.id, owner: isOwner ? 1 : 0 }); beacon('play');
   }
   function gameOver(){
     S.state = 'over'; S.shake = 14;
@@ -446,12 +453,12 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     const isNew = S.score > S.hi;
     if (isNew){ S.hi = S.score; try{ localStorage.setItem(HI_KEY, S.hi); }catch(e){} scoreHiEl.textContent = S.hi; }
     newHiEl.hidden = !isNew;
-    drEvent('game_over', { character: CHAR.name, score: S.score, world: S.worldIdx, new_record: isNew ? 1 : 0 }); beacon('over');
+    drEvent('game_over', { character: CHAR.id, score: S.score, world: S.worldIdx, new_record: isNew ? 1 : 0 }); beacon('over');
     setTimeout(() => { overOv.classList.remove('hide'); document.getElementById('overPanel').hidden = false; document.getElementById('charBar').hidden = false; }, 350);
     onGameOverRank(S.score, isNew);
   }
   function jump(){
-    if (S.state !== 'play') return;
+    if (S.state !== 'play' || S.fly > 0) return;
     if (dino.onGround){
       dino.vy = dino.duck ? -15 : -16.5; dino.onGround = false; dino.duck = false;
       beep(520, .14, 'square', .05, 260);
@@ -467,14 +474,15 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     else if (S.state === 'play') jump();
     else if (S.state === 'over' && !overOv.classList.contains('hide')) start();
   }
-  cv.addEventListener('pointerdown', e => { e.preventDefault(); swipeY = e.clientY; pressAction(); });
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); swipeY = e.clientY; S.hold = true; pressAction(); });
+  window.addEventListener('pointerup', () => { S.hold = false; }); window.addEventListener('pointercancel', () => { S.hold = false; });
   document.getElementById('startBtn').addEventListener('click', start);
   document.getElementById('retryBtn').addEventListener('click', start);
   window.addEventListener('keydown', e => {
-    if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); if (!e.repeat) pressAction(); }
+    if (e.code === 'Space' || e.code === 'ArrowUp'){ e.preventDefault(); S.hold = true; if (!e.repeat) pressAction(); }
     if (e.code === 'ArrowDown'){ e.preventDefault(); if (S.state==='play'){ dino.duck = true; if(!dino.onGround) dino.vy += 2.5; } }
   });
-  window.addEventListener('keyup', e => { if (e.code === 'ArrowDown') dino.duck = false; });
+  window.addEventListener('keyup', e => { if (e.code === 'ArrowDown') dino.duck = false; if (e.code === 'Space' || e.code === 'ArrowUp') S.hold = false; });
   // スマホ：しゃがみボタンを押している間しゃがむ（空中なら急降下）
   const duckBtn = document.getElementById('duckBtn');
   const duckOn  = e => { e.preventDefault(); e.stopPropagation(); if (S.state!=='play') return; dino.duck = true; if(!dino.onGround) dino.vy += 2.5; duckBtn.classList.add('on'); };
@@ -494,7 +502,8 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     const canBird = S.score >= 250 && Math.random() < .3;
     if (canBird){
       const lanes = [GROUND - 22, GROUND - 78, GROUND - 130];
-      obstacles.push({ type:'bird', x:DIR > 0 ? W + 40 : -120, y:lanes[Math.floor(Math.random()*lanes.length)], w:64, h:50, flap:Math.random()*6 });
+      const who = RIVALS[Math.floor(Math.random()*RIVALS.length)];
+      obstacles.push({ type:'bird', who, x:DIR > 0 ? W + 40 : -120, y:lanes[Math.floor(Math.random()*lanes.length)], w:64, h:50, flap:Math.random()*6 });
     } else {
       const big = Math.random() < .4;
       const n = Math.random() < .55 ? 1 : (Math.random() < .6 || big ? 2 : 3);   // 大サボテンは最大2連
@@ -537,8 +546,18 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     if (S.state !== 'play') return;
 
     // 物理
-    dino.vy += .8 * dt; dino.y += dino.vy * dt;
-    if (dino.y >= GROUND){ if(!dino.onGround){ dino.squash = 1; burst(dino.x + dino.size*.4, GROUND, 6, ['#fff','#1B1B1F']); } dino.y = GROUND; dino.vy = 0; dino.onGround = true; }
+    if (S.fly > 0){
+      // 飛行中: 押している間は上昇、離すと下降。地面〜上端の間を自由に
+      S.fly -= dt; dino.onGround = false; dino.duck = false;
+      dino.vy += (S.hold ? -.9 : .7) * dt; dino.vy = Math.max(-5, Math.min(4.5, dino.vy)); dino.y += dino.vy * dt;
+      const top = 120; if (dino.y < top){ dino.y = top; dino.vy = 0; } if (dino.y > GROUND){ dino.y = GROUND; dino.vy = 0; }
+      if (Math.random() < .5) particles.push({ x:dino.x + dino.size*.2, y:dino.y - dino.size*.45 + (Math.random()-.5)*40, vx:-DIR*(2+Math.random()*2), vy:(Math.random()-.5), life:24, c:['#FFE000','#fff','#FFB3DE'][Math.floor(Math.random()*3)], r:2+Math.random()*3 });
+      if (S.fly <= 0){ S.fly = 0; S.grace = 90; flashes.push({ text:'LANDING', life:50 }); S.nextStar = S.score + STAR_EVERY; }   // 次の★は着地からさらに500点走ってから。着地後1.5秒は無敵
+    } else {
+      if (S.grace > 0) S.grace -= dt;
+      dino.vy += .8 * dt; dino.y += dino.vy * dt;
+      if (dino.y >= GROUND){ if(!dino.onGround){ dino.squash = 1; burst(dino.x + dino.size*.4, GROUND, 6, ['#fff','#1B1B1F']); } dino.y = GROUND; dino.vy = 0; dino.onGround = true; }
+    }
 
     // 速度・スコア
     S.speed = Math.min(14, 6 + S.dist / 180);
@@ -557,7 +576,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
 
     // 障害物
     spawnGap -= dt;
-    if (spawnGap <= 0){
+    if (spawnGap <= 0 && !(S.fly > 0 && S.fly < 150)){   // 飛行終了の直前2.5秒は出さない(着地時の激突防止)
       spawnObstacle();
       const base = 75 - Math.min(35, S.speed*2.5);
       spawnGap = base + Math.random()*70;
@@ -565,10 +584,25 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     obstacles.forEach(o => { o.x -= DIR * S.speed * dt; if (o.type==='bird'){ o.x -= DIR * 1.2*dt; o.flap += dt*.25; } });
     obstacles = obstacles.filter(o => DIR > 0 ? o.x + o.w > -10 : o.x < W + 10);
 
+    // ★スター: 500点ごとに飛来。ジャンプの頂点あたりの高さを、ゆらゆら飛ぶ
+    if (!star && S.fly <= 0 && S.score >= S.nextStar){ S.nextStar += STAR_EVERY; star = { x: DIR > 0 ? W + 40 : -40, y: GROUND - 120, rot: 0, t: 0 }; beep(1040, .12, 'triangle', .05); }
     const db = dinoBox();
-    for (const o of obstacles){
-      const ob = o.type==='bird' ? { x:o.x+10, y:o.y-o.h+8, w:o.w-20, h:o.h-14 } : { x:o.x+5, y:o.y-o.h+10, w:o.w-10, h:o.h-10 };
-      if (hit(db, ob)){ gameOver(); break; }
+    if (star){
+      star.t += dt; star.x -= DIR * (S.speed * .8) * dt; star.rot += .06 * dt; star.y = GROUND - 120 + Math.sin(star.t * .08) * 18;
+      if (Math.random() < .4) particles.push({ x:star.x + (Math.random()-.5)*30, y:star.y + (Math.random()-.5)*30, vx:0, vy:-.5, life:18, c:'#FFE000', r:1.5+Math.random()*2 });
+      const sb = { x:star.x-22, y:star.y-22, w:44, h:44 };
+      if (hit(db, sb)){
+        S.fly = FLY_SEC * 60; star = null;
+        flashes.push({ text:`FLY ${FLY_SEC}s!`, life:80 }); burst(dino.x + dino.size*.5, dino.y - dino.size*.5, 40, ['#FFE000','#fff','#FF3EA5','#00D4FF']);
+        beep(880, .1, 'square', .06); setTimeout(()=>beep(1175,.1,'square',.06),90); setTimeout(()=>beep(1568,.2,'square',.06),180);
+        drEvent('star_catch', { character: CHAR.id, score: S.score });
+      } else if (DIR > 0 ? star.x < -40 : star.x > W + 40) star = null;
+    }
+    if (S.fly <= 0 && S.grace <= 0){
+      for (const o of obstacles){
+        const ob = o.type==='bird' ? { x:o.x+10, y:o.y-o.h+8, w:o.w-20, h:o.h-14 } : { x:o.x+5, y:o.y-o.h+10, w:o.w-10, h:o.h-10 };
+        if (hit(db, ob)){ gameOver(); break; }
+      }
     }
   }
 
@@ -599,8 +633,9 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     const f = Math.sin(o.flap);
     const cx = o.x + o.w/2, cy = o.y - o.h/2 + f*5;
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(f*.08); ctx.scale(1, 1 - Math.abs(f)*.08);
-    if (enemy.ready){
-      const sz = ENEMY.size; ctx.drawImage(enemy.canvas, -sz/2, -sz/2, sz, sz);
+    const e = enemies[o.who];
+    if (e && e.ready){
+      const sz = e.size; ctx.drawImage(e.canvas, -sz/2, -sz/2, sz, sz);
     } else {
       ctx.fillStyle = '#FFE000'; ctx.strokeStyle = '#1B1B1F'; ctx.lineWidth = 3;
       rr(-o.w/2, -o.h/2, o.w, o.h, 12); ctx.fill(); ctx.stroke();
@@ -613,7 +648,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     // 走り：上下バウンド＋傾き、着地でつぶれ、しゃがみで平たく
     const run = S.state==='play' ? Math.abs(Math.sin(dino.runT)) : Math.abs(Math.sin(dino.runT))*.5;
     const bob = dino.onGround ? -run*6 : 0;
-    const rot = dino.onGround ? Math.sin(dino.runT)*.05 : Math.max(-.35, Math.min(.35, -DIR * dino.vy*.03));  // 上昇で鼻先が上がる
+    const rot = S.fly > 0 ? Math.max(-.25, Math.min(.25, -DIR * dino.vy*.04)) : dino.onGround ? Math.sin(dino.runT)*.05 : Math.max(-.35, Math.min(.35, -DIR * dino.vy*.03));  // 上昇で鼻先が上がる
     let sx = 1, sy = 1;
     if (dino.squash > 0){ sx = 1 + dino.squash*.18; sy = 1 - dino.squash*.18; }
     if (dino.duck && dino.onGround){ sx = 1.25; sy = .62; }
@@ -627,10 +662,11 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     ctx.restore(); ctx.save();
     ctx.translate(dino.x + s*.5, dino.y + bob);
     ctx.rotate(rot); ctx.scale(sx, sy);
-    if (isOwner){ ctx.shadowColor = 'rgba(255,200,0,.95)'; ctx.shadowBlur = 22; }
+    if (S.grace > 0 && Math.floor(S.t / 4) % 2 === 0) ctx.globalAlpha = .45;   // 着地後の無敵は点滅
+    if (isOwner || S.fly > 0){ ctx.shadowColor = S.fly > 0 ? 'rgba(255,255,255,.95)' : 'rgba(255,200,0,.95)'; ctx.shadowBlur = 22; }
     if (sprite.ready){
       ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s);
-      if (isOwner){ ctx.shadowBlur = 0; ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s); }
+      if (isOwner || S.fly > 0){ ctx.shadowBlur = 0; ctx.drawImage(sprite.canvas, -s*.5, -s*.96, s, s); }
     } else {
       ctx.fillStyle = '#1B1B1F'; rr(-s*.3, -s*.8, s*.6, s*.8, 14); ctx.fill();
     }
@@ -678,7 +714,18 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     for (let x = (DIR > 0 ? -off : off) - 120; x < W + 60; x += 60){ ctx.fillRect(x, GROUND + 18, 28, 6); ctx.fillRect(x + 36, GROUND + 34, 12, 5); }
 
     obstacles.forEach(o => o.type==='bird' ? drawBird(o) : drawCactus(o, world));
+    if (star){
+      ctx.save(); ctx.shadowColor = 'rgba(255,224,0,.9)'; ctx.shadowBlur = 18;
+      drawStar(star.x, star.y, 24, star.rot); ctx.fillStyle = '#FFE000'; ctx.fill(); ctx.shadowBlur = 0; ctx.lineWidth = 3; ctx.strokeStyle = '#1B1B1F'; ctx.stroke();
+      drawStar(star.x - 5, star.y - 5, 8, star.rot); ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fill(); ctx.restore();
+    }
     drawDino();
+    if (S.fly > 0){
+      const sec = Math.ceil(S.fly / 60), blink = sec <= 3 && Math.floor(S.t / 8) % 2 === 0;
+      ctx.save(); ctx.font = '900 18px "M PLUS Rounded 1c", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.lineWidth = 5; ctx.strokeStyle = '#1B1B1F'; ctx.fillStyle = blink ? '#E5484D' : '#FFE000';
+      ctx.strokeText(`★ FLY ${sec}`, W*.5, 10); ctx.fillText(`★ FLY ${sec}`, W*.5, 10); ctx.restore();
+    }
 
     // パーティクル
     particles.forEach(p => { ctx.globalAlpha = Math.min(1, p.life/20); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); });
@@ -716,7 +763,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   }
   requestAnimationFrame(loop);
   // テスト用フック
-  window.DRRUN = { S, dino, step, draw, start, jump, get obstacles(){ return obstacles; } };
+  window.DRRUN = { S, dino, step, draw, start, jump, get obstacles(){ return obstacles; }, get star(){ return star; } };
 
   // ================= 🏆 ランキング =================
   const NAME_KEY = 'dr_run_name', PID_KEY = 'dr_run_pid';
@@ -742,12 +789,12 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
     if (name !== savedName){ savedName = name; try{ localStorage.setItem(NAME_KEY, name); }catch(e){} }
     showMsg('登録中…'); rankForm.hidden = true;
     try{
-      const r = await fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ char: CHAR.name, pid, name, score }) });
+      const r = await fetch(RANK_API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ char: CHAR.id, pid, name, score }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || r.status);
       const wr = d.week && d.week.me ? d.week.me.rank : null;
       showMsg(`${esc(name)} さん：今週 <b>${wr ?? '-'}位</b>（累計 ${d.rank}位 / ${d.total}人・ベスト ${d.best}）`);
-      drEvent('rank_submit', { character: CHAR.name, score, rank: d.rank, week_rank: wr });
+      drEvent('rank_submit', { character: CHAR.id, score, rank: d.rank, week_rank: wr });
       lastBoard = { top: d.top, total: d.total, me: { rank: d.rank, best: d.best }, week: d.week }; renderScope();
     }catch(e){ showMsg('登録できませんでした'); rankForm.hidden = false; }
   }
@@ -781,7 +828,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   async function openBoard(){
     rankOverlay.classList.add('open');
     try{
-      const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.name)}&pid=${pid}`);
+      const r = await fetch(`${RANK_API}?char=${encodeURIComponent(CHAR.id)}&pid=${pid}`);
       const d = await r.json();
       lastBoard = d; renderScope();
     }catch(e){ rankList.innerHTML = '<li><span class="rk">!</span><span class="nm">読み込めませんでした</span><span></span></li>'; rankFoot.textContent = ''; }
@@ -802,7 +849,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
   document.querySelectorAll('.share-opt').forEach(btn => btn.addEventListener('click', async () => {
     const url = location.origin + location.pathname;
     const m = rankMsg.hidden ? null : rankMsg.textContent.match(/(\d+)位/);
-    const text = `DINORENNY RUN で ${S.score} 点${m ? `（${m[1]}位）` : ''}！ #DinoRenny #${CHAR.name}`;
+    const text = `CHARAMARL RUN（${CHAR.name}）で ${S.score} 点${m ? `（${m[1]}位）` : ''}！ #CHARAMARL`;
     const kind = btn.dataset.sh;
     drEvent('share', { method: kind, score: S.score }); beacon('share');
     if (kind === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url), '_blank');
@@ -811,7 +858,7 @@ window.drEvent=function(name,params){ try{ if(window.gtag) window.gtag('event',n
       try{ await navigator.clipboard.writeText(url); document.getElementById('shCopyLb').textContent = 'コピーしました！'; }catch(e){ prompt('URLをコピー', url); }
       return;
     }
-    else if (kind === 'native'){ try{ await navigator.share({ title:'DINORENNY RUN', text, url }); }catch(e){} }
+    else if (kind === 'native'){ try{ await navigator.share({ title:'CHARAMARL RUN', text, url }); }catch(e){} }
     shareOverlay.classList.remove('open');
   }));
 })();
