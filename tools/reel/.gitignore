@@ -2,7 +2,9 @@ node_modules/
 frames/
 out/
 log_*.txt
+batch_log.txt
 cfg_*.json
 sheet*.png
+all_sheets.png
 *.ttf
 package-lock.json
