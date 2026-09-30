@@ -1,0 +1,8 @@
+node_modules/
+frames/
+out/
+log_*.txt
+cfg_*.json
+sheet*.png
+*.ttf
+package-lock.json
