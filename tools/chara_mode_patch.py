@@ -99,7 +99,7 @@ rep("    // 太陽\n",
 """)
 rep("      const a = Math.min(1, f.life/25), sc = f.small ? 1 : 1 + (1 - Math.min(1, (70 - f.life)/10))*.6;",
     "      const a = Math.min(1, f.life/25), sc = (f.small || f.big) ? 1 : 1 + (1 - Math.min(1, (70 - f.life)/10))*.6;")
-rep("ctx.translate(f.small ? dino.x + dino.size*.5 : W*.5, f.small ? dino.y - dino.size - 10 : 92);", "ctx.translate(f.small ? dino.x + dino.size*.5 : W*.5, f.small ? dino.y - dino.size - 10 : (f.big ? 34 : 92));")
+rep("ctx.translate(f.small ? dino.x + dino.size*.5 : W*.5, f.small ? dino.y - dino.size - 10 : 92);", "ctx.translate(f.small ? dino.x + dino.size*.5 : W*.5, f.small ? dino.y - dino.size - 10 : (f.big ? 58 : 92));")
 rep("ctx.font = f.small ? '900 16px \"M PLUS Rounded 1c\", sans-serif' : '900 34px \"M PLUS Rounded 1c\", sans-serif';", "ctx.font = f.small ? '900 16px \"M PLUS Rounded 1c\", sans-serif' : (f.big ? '900 24px \"M PLUS Rounded 1c\", sans-serif' : '900 34px \"M PLUS Rounded 1c\", sans-serif');")
 rep("      ctx.fillStyle = '#FFE000'; ctx.fillText(f.text, 0, 0);\n      ctx.restore();\n    });",
 """      ctx.fillStyle = f.big ? hue(f.life*9) : '#FFE000'; ctx.fillText(f.text, 0, 0);
