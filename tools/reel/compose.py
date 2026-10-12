@@ -34,7 +34,7 @@ def frame(game_img, caption, sub=None, dim=False):
         ov=Image.new('RGBA',(W,H),(27,27,31,150)); im=Image.alpha_composite(im.convert('RGBA'),ov).convert('RGB'); d=ImageDraw.Draw(im)
     if caption: pill(d,caption,GY+gh+80)
     if sub: center(d,sub,GY+gh+240,F3,'white',7,(4,4))
-    center(d,cfg['url'],H-260,F4,'white',6,(3,3)); center(d,'プロフのリンクから走れる',H-190,F4,(255,224,0),6,(3,3))
+    center(d,cfg['url'],H-260,F4,'white',6,(3,3)); center(d,cfg.get('cta','プロフのリンクから走れる'),H-190,F4,(255,224,0),6,(3,3))
     return im
 games=sorted(glob.glob('frames/g_*.jpg'))
 timeline=[(0,3.0,'ログイン不要・タップで走るだけ'),(3.0,5.5,'タップでジャンプ ↓でしゃがむ'),(5.5,7.2,'100点ごとに世界の色がかわる'),(7.2,11,'★を取ると15秒 空を飛べる')]
