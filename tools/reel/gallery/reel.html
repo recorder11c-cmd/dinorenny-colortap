@@ -61,11 +61,12 @@ function draw(){
     const INK = '#1B1B1F', F = '"M PLUS Rounded 1c", sans-serif', FL = '"Helvetica Neue", Helvetica, Arial, sans-serif', OR = '#F97316', PU = '#8B5CF6';
     g.save(); g.translate(W/2, H/2 - 60); g.scale(sc, sc);
     // 白い板(サイトのロゴと同じ配色: CHARA=オレンジ / MARL=紫)
-    g.fillStyle = 'rgba(0,0,0,.18)'; rr(-470 + 10, -290 + 16, 940, 580, 44); g.fill(); g.fillStyle = '#fff'; rr(-470, -290, 940, 580, 44); g.fill();
+    g.fillStyle = 'rgba(0,0,0,.18)'; rr(-470 + 10, -330 + 16, 940, 640, 44); g.fill(); g.fillStyle = '#fff'; rr(-470, -330, 940, 640, 44); g.fill();
     g.textBaseline = 'middle'; g.font = `800 112px ${FL}`; g.textAlign = 'left';
     const sp = 0.10 * 112; const wA = g.measureText('CHARA').width + sp * 5, wB = g.measureText('MARL').width + sp * 3; let x0 = -(wA + wB) / 2;
     const drawSpaced = (txt, x, y, col) => { g.fillStyle = col; for (const ch of txt){ g.fillText(ch, x, y); x += g.measureText(ch).width + sp; } return x; };
     x0 = drawSpaced('CHARA', x0, -80, OR); drawSpaced('MARL', x0, -80, PU);
+    g.textAlign = 'center'; g.font = `80px ${F}`; g.fillStyle = INK; g.fillText('🎪', 0, -190);
     g.textAlign = 'center'; g.font = `900 64px ${F}`; g.fillStyle = INK; g.fillText(CFG.sub, 0, 52);
     g.font = `800 40px ${F}`; g.fillStyle = '#6B6660'; g.fillText(CFG.sub2, 0, 140);
     g.font = `800 46px ${FL}`; g.fillStyle = PU; g.fillText(CFG.url, 0, 218);
