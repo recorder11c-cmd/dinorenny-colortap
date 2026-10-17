@@ -8,7 +8,7 @@
 // 参考リールと同じ構成: 無地の地 → 作品カードが上から降って積み上がる → 画面が埋まったら白くフェード → ロゴがポンと出る → 保持。7秒・60tick/s
 const { Engine, Bodies, Body, Composite } = Matter;
 const W = 1080, H = 1920, cv = document.getElementById('cv'), g = cv.getContext('2d');
-const CFG = window.REEL_CFG || { bg:'#8B5CF6', dots:true, total:7, title:'CHARAMARL', sub:'キャラクターの市場', sub2:'作品から、作家の活動場所へ', url:'charamarl.com', cardSize:[150, 240] };
+const CFG = window.REEL_CFG || { bg:'#8B5CF6', dots:true, total:7, title:'CHARAMARL', sub:'キャラクターとアートの市場', sub2:'作品から、作家の活動場所へ', url:'charamarl.com', cardSize:[150, 240] };
 let cards = [], imgs = {}, bodies = [], t = 0, spawnAcc = 0, order = [];
 const engine = Engine.create({ positionIterations:8, velocityIterations:6 }); engine.gravity.y = 1.6;
 Composite.add(engine.world, [Bodies.rectangle(W/2, H+60, W*2, 120, { isStatic:true, friction:.9 }), Bodies.rectangle(-60, H/2, 120, H*3, { isStatic:true }), Bodies.rectangle(W+60, H/2, 120, H*3, { isStatic:true })]);
