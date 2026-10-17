@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><title>CHARAMARL reel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800;900&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="cv" width="1080" height="1920"></canvas>
+<script>
+// 参考リールと同じ構成: 無地の地 → 作品カードが上から降って積み上がる → 画面が埋まったら白くフェード → ロゴがポンと出る → 保持。7秒・60tick/s
+const { Engine, Bodies, Body, Composite } = Matter;
+const W = 1080, H = 1920, cv = document.getElementById('cv'), g = cv.getContext('2d');
+const CFG = window.REEL_CFG || { bg:'#FF3EA5', dots:true, total:7, title:'CHARAMARL', sub:'キャラクターの市場', sub2:'作品から、作家の活動場所へ', url:'charamarl.com', cardSize:[150, 240] };
+let cards = [], imgs = {}, bodies = [], t = 0, spawnAcc = 0, order = [];
+const engine = Engine.create({ positionIterations:8, velocityIterations:6 }); engine.gravity.y = 1.6;
+Composite.add(engine.world, [Bodies.rectangle(W/2, H+60, W*2, 120, { isStatic:true, friction:.9 }), Bodies.rectangle(-60, H/2, 120, H*3, { isStatic:true }), Bodies.rectangle(W+60, H/2, 120, H*3, { isStatic:true })]);
+function rnd(seed){ let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const R = rnd(20261017);
+async function load(){
+  cards = await (await fetch('cards.json')).json();
+  await Promise.all(cards.map(c => new Promise(res => { const im = new Image(); im.onload = () => { imgs[c.id] = im; res(); }; im.onerror = res; im.src = 'img/' + c.id + '.jpg'; })));
+  order = cards.slice(); for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  await document.fonts.load('900 120px "M PLUS Rounded 1c"');
+  window.REEL_READY = true;
+}
+// 降らせる: 0.3s〜3.6s の間に全部出す(序盤はまばら、だんだん密に)
+const SPAWN_START = .3, SPAWN_END = 3.6;
+function tick(){
+  const dt = 1/60; t += dt;
+  if (t >= SPAWN_START && t <= SPAWN_END && bodies.length < order.length){
+    const prog = (t - SPAWN_START) / (SPAWN_END - SPAWN_START);
+    const rate = 8 + 70 * prog;      // 個/秒
+    spawnAcc += rate * dt;
+    while (spawnAcc >= 1 && bodies.length < order.length){
+      spawnAcc -= 1; const c = order[bodies.length];
+      const sz = CFG.cardSize[0] + R() * (CFG.cardSize[1] - CFG.cardSize[0]);
+      const b = Bodies.rectangle(80 + R() * (W - 160), -sz - R() * 300, sz, sz, { friction:.8, frictionStatic:1, restitution:.05, density:.002, chamfer:{ radius: 0 } });
+      Body.setAngle(b, (R() - .5) * 1.2); Body.setAngularVelocity(b, (R() - .5) * .2); Body.setVelocity(b, { x:(R() - .5) * 6, y: 8 + R() * 10 });
+      b.plugin = { id:c.id, sz }; bodies.push(b); Composite.add(engine.world, b);
+    }
+  }
+  Engine.update(engine, 1000/60);
+}
+function rr(x, y, w, h, r){ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function draw(){
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = CFG.bg; g.fillRect(0, 0, W, H);
+  if (CFG.dots){ g.fillStyle = 'rgba(255,255,255,.18)'; for (let y = 40; y < H; y += 80) for (let x = 40; x < W; x += 80){ g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill(); } }
+  for (const b of bodies){
+    const im = imgs[b.plugin.id]; if (!im) continue; const s = b.plugin.sz, pad = 10;
+    g.save(); g.translate(b.position.x, b.position.y); g.rotate(b.angle);
+    g.shadowColor = 'rgba(0,0,0,.28)'; g.shadowBlur = 18; g.shadowOffsetY = 6;
+    g.fillStyle = '#fff'; rr(-s/2, -s/2, s, s, 14); g.fill(); g.shadowColor = 'transparent';
+    g.save(); rr(-s/2 + pad, -s/2 + pad, s - pad*2, s - pad*2, 8); g.clip(); g.drawImage(im, -s/2 + pad, -s/2 + pad, s - pad*2, s - pad*2); g.restore();
+    g.restore();
+  }
+  // 白フェード(4.0s→4.6s)とロゴ(4.5sからバウンスで登場)
+  const fade = Math.min(1, Math.max(0, (t - 4.0) / .6));
+  if (fade > 0){ g.fillStyle = `rgba(255,255,255,${.78 * fade})`; g.fillRect(0, 0, W, H); }
+  const lt = t - 4.5;
+  if (lt > 0){
+    const ease = lt < .45 ? 1 + 0.35 * Math.sin(Math.min(1, lt/.45) * Math.PI) * (1 - lt/.45) : 1;   // ポンと出て少し戻る
+    const sc = Math.min(1, lt / .18) * ease;
+    const INK = '#1B1B1F', F = '"M PLUS Rounded 1c", sans-serif';
+    g.save(); g.translate(W/2, H/2 - 60); g.scale(sc, sc);
+    // 白い板
+    g.fillStyle = INK; rr(-470 + 14, -290 + 14, 940, 580, 44); g.fill(); g.fillStyle = '#FFF6E5'; rr(-470, -290, 940, 580, 44); g.fill(); g.lineWidth = 10; g.strokeStyle = INK; g.stroke();
+    const outlined = (txt, y, size, fill) => { g.font = `900 ${size}px ${F}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineWidth = Math.max(8, size * .16); g.strokeStyle = INK; g.strokeText(txt, 0, y); g.fillStyle = fill; g.fillText(txt, 0, y); };
+    outlined('🎪', -185, 86, '#fff');
+    outlined(CFG.title, -60, 150, '#FFE000');
+    outlined(CFG.sub, 68, 68, '#fff');
+    g.font = `800 42px ${F}`; g.fillStyle = INK; g.textAlign = 'center'; g.lineWidth = 0; g.fillText(CFG.sub2, 0, 160);
+    g.font = `800 48px ${F}`; g.fillStyle = '#FF3EA5'; g.fillText(CFG.url, 0, 232);
+    g.restore();
+  }
+}
+load();
+window.REEL = { tick, draw, get t(){ return t; }, get n(){ return bodies.length; } };
+</script></body></html>
