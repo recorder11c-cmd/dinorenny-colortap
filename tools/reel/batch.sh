@@ -1,6 +1,6 @@
 #!/bin/bash
 # 使い方: ./batch.sh gmc ufoo ...   → ~/Downloads/CHARAMARL/03_画像/reel/run_reel_<char>_v1.mp4
-cd "$(dirname "$0")"; OUT=~/Downloads/CHARAMARL/03_画像/reel; mkdir -p "$OUT"
+cd "$(dirname "$0")"; OUT="/Users/KCL/Library/Mobile Documents/com~apple~CloudDocs/CHARAMARL/03_画像/reel"; mkdir -p "$OUT"
 for c in "$@"; do
   case $c in gmc|inkumo|mony|yurucrazy) FLIP=true;; *) FLIP=false;; esac
   case $c in blockma) PIX=true;; *) PIX=false;; esac

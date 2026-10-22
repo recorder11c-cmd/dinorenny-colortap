@@ -37,12 +37,12 @@ def frame(game_img, caption, sub=None, dim=False):
     center(d,cfg['url'],H-260,F4,'white',6,(3,3)); center(d,cfg.get('cta','プロフのリンクから走れる'),H-190,F4,(255,224,0),6,(3,3))
     return im
 games=sorted(glob.glob('frames/g_*.jpg'))
-timeline=[(0,3.0,'ログイン不要・タップで走るだけ'),(3.0,5.5,'タップでジャンプ ↓でしゃがむ'),(5.5,7.2,'100点ごとに世界の色がかわる'),(7.2,11,'★を取ると15秒 空を飛べる')]
+timeline=[tuple(x) for x in cfg.get('timeline',[(0,3.0,'ログイン不要・タップで走るだけ'),(3.0,5.5,'タップでジャンプ ↓でしゃがむ'),(5.5,7.2,'100点ごとに世界の色がかわる'),(7.2,11,'★を取ると15秒 空を飛べる')])]
 idx=0
-for i in range(int(1.0*FPS)): frame(games[0],'ログイン不要・タップで走るだけ').save(f'out/f_{idx:04d}.jpg',quality=92); idx+=1
+for i in range(int(1.0*FPS)): frame(games[0],timeline[0][2]).save(f'out/f_{idx:04d}.jpg',quality=92); idx+=1
 for k,gpath in enumerate(games):
     t=k/FPS; cap=next((c for a,b,c in timeline if a<=t<b), timeline[-1][2]); frame(gpath,cap).save(f'out/f_{idx:04d}.jpg',quality=92); idx+=1
-for i in range(int(2.5*FPS)): frame(games[-1],'ランキングに名前をのこそう',cfg['endSub'],dim=True).save(f'out/f_{idx:04d}.jpg',quality=92); idx+=1
+for i in range(int(2.5*FPS)): frame(games[-1],cfg.get('endCap','ランキングに名前をのこそう'),cfg['endSub'],dim=True).save(f'out/f_{idx:04d}.jpg',quality=92); idx+=1
 print('frames',idx,'sec',idx/FPS)
 picks=[0,int(4*FPS),int(11*FPS),idx-1]; sheet=Image.new('RGB',(4*270,480),(255,255,255))
 for j,p in enumerate(picks): sheet.paste(Image.open(f'out/f_{p:04d}.jpg').resize((270,480)),(j*270,0))
